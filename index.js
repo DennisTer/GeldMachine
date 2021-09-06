@@ -31,9 +31,9 @@ const { Console } = require('console')
 let limitRemaining;
 const coins = ['HOT','BTC','ELF'];
 let timeStamps = [];
-let smaShortPeriod = 10;
-let smaMediumPeriod = 25;
-let smaLongPeriod = 50;
+let smaShortPeriod = 2;
+let smaMediumPeriod = 5;
+let smaLongPeriod = 10;
 let allCoins = []; //Multi dimensional array of all coins and prices and trends.. Gonna be HUGE!!
 let buildALLCOINS = 0;
 let coinHero;
@@ -155,9 +155,9 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     //*******   
   }
   if (aankoopArray.length > 0) {
-    console.log('Gekochte munt: ' + aankoopArray[0] + '. Ingekocht voor: ' + aankoopArray[1] + '. Hoeveelheid= ' + aankoopArray[2])
+    console.log('Gekochte munt: ' + aankoopArray[0][0] + '. Ingekocht voor: ' + aankoopArray[0][1] + '. Hoeveelheid= ' + aankoopArray[0][2])
     console.log('Delta Short SMA: ' + muntShort + '. Delta Medium SMA: ' + muntMedium + '. Long Trend= ' + muntLong)
-    var resultaat = (huidigePrijsAangekocht*aankoopArray[2])-(aankoopArray[1]*aankoopArray[2])
+    var resultaat = (huidigePrijsAangekocht*aankoopArray[0][2])-(aankoopArray[0][1]*aankoopArray[0][2])
     console.log('Huidige prijs= ' + huidigePrijsAangekocht + '. Resultaat= ' + resultaat + '. TOTAAL = ' + digiEUR + ' EURO')
 
   }
@@ -216,6 +216,7 @@ function buy(coindata) {
   aankoopArray.push([name,price,parseFloat(aankoophoeveelheid)])
   console.log('Ingekocht munt ' + name + ' hoeveelheid = ' + aankoophoeveelheid + ' voor prijs: ' + price +'.')
   console.log('Saldo Euro = ' + geldEUR)
+  console.log(aankoopArray)
 }
 
 function sell(aankoopdata,verkoopdata) {
