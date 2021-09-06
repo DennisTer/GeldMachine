@@ -117,7 +117,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     var stijging = ((allCoins[i][3]-allCoins[i][5])/allCoins[i][5]) * 100;
     var stijgingmedium = ((allCoins[i][4]-allCoins[i][5])/allCoins[i][5]) * 100;
     var stijgingLong = -1000;
-    if ( avgLong.length > 11) { stijgingLong = avgLong[avgLong.lenght-1] - avgLong[avgLong.lenght-10]}
+    if ( avgLong.length > 3) { stijgingLong = parseFloat(avgLong[avgLong.lenght-1]) - parseFloat(avgLong[avgLong.lenght-2])}
     if ( stijging != NaN) { allCoins[i][6] = parseFloat(stijging.toFixed(4)) }
     if ( stijgingmedium != NaN) { allCoins[i][7] = parseFloat(stijgingmedium.toFixed(4)) }
     if ( stijgingLong > -1000) { allCoins[i][8] = parseFloat(stijgingLong.toFixed(4)) }
