@@ -114,13 +114,13 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     if (avgShort.length > 0) {allCoins[i][3] = parseFloat(avgShort[avgShort.length-1])};
     if (avgMedium.length > 0) {allCoins[i][4] = parseFloat(avgMedium[avgMedium.length-1])};
     if (avgLong.length > 0) {allCoins[i][5] = parseFloat(avgLong[avgLong.length-1])};
+    if (avgLong.length > 1) {allCoins[i][8] = parseFloat(avgLong[avgLong.length-2])};
     var stijging = ((allCoins[i][3]-allCoins[i][5])/allCoins[i][5]) * 100;
     var stijgingmedium = ((allCoins[i][4]-allCoins[i][5])/allCoins[i][5]) * 100;
-    var stijgingLong = -1000;
-    if ( avgLong.length > 3) { stijgingLong = parseFloat(avgLong[avgLong.lenght-1]) - parseFloat(avgLong[avgLong.lenght-2])}
+    var stijgingLong = allCoins[i][8] - allCoins[i][5];    
     if ( stijging != NaN) { allCoins[i][6] = parseFloat(stijging.toFixed(4)) }
     if ( stijgingmedium != NaN) { allCoins[i][7] = parseFloat(stijgingmedium.toFixed(4)) }
-    if ( stijgingLong > -1000) { allCoins[i][8] = parseFloat(stijgingLong.toFixed(4)) }
+    if ( stijgingLong != undefined) { allCoins[i][8] = parseFloat(stijgingLong.toFixed(4) * 1000) }
     if ( aankoopArray.length != 0 ){
       
       if ( allCoins[i][0] === aankoopArray[0][0]) {
@@ -146,11 +146,15 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     //
     //Er moeten meer check bijkomen voor kopen.... BV een check op de trends om kopen bij uitschieters
     //te voorkomen
-    if ( stijging > coinHero) { 
+
+    //CoinHero is de sterkst stijgende munt op korte termijn. Hier moeten nog wat voorwaarden aan
+    //verbonden worden om tot coinHero uitgeroepen te worden.
+    if ( stijging > coinHero && allCoins[i][8] > 0) { 
       coinHero = stijging;
       coinHero2 = stijgingmedium;
       coinHeroArr = allCoins[i];
-      coinHeroName = allCoins[i][0]; 
+      coinHeroName = allCoins[i][0];
+      console.log('CoinHero = ' + coinHeroName + '. Met stijging: ' + coinHero) 
     }
     //*******   
   }
@@ -158,7 +162,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     console.log('Gekochte munt: ' + aankoopArray[0][0] + '. Ingekocht voor: ' + aankoopArray[0][1] + '. Hoeveelheid= ' + aankoopArray[0][2])
     console.log('Delta Short SMA: ' + muntShort + '. Delta Medium SMA: ' + muntMedium + '. Long Trend= ' + muntLong)
     var resultaat = (huidigePrijsAangekocht*aankoopArray[0][2])-(aankoopArray[0][1]*aankoopArray[0][2])
-    console.log('Huidige prijs= ' + huidigePrijsAangekocht + '. Resultaat= ' + resultaat + '. TOTAAL = ' + digiEUR + ' EURO')
+    console.log('Huidige prijs= ' + huidigePrijsAangekocht + '. Resultaat= ' + resultaat.toFixed(2) + '. TOTAAL = ' + digiEUR.toFixed(2) + ' EURO')
 
   }
   //Hieronder halen we de tijd binnen van de bitvavo server. Maar omdat die in Frankfurt staat
@@ -179,13 +183,16 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   //Virtueel handelssysteem om te testen
   checkStatus();
   checkStatusSell();
+  //console.log(allCoins[12])
+  //console.log('BUG SEARCH AVGLONG: ' + avgLong)
 })
 //Virtueel handelssysteem om te testen en te tweaken checkStatus, buy and sell
 function checkStatus() {
   if (buildALLCOINS > smaLongPeriod) {
     if (geldEUR > 10) {
       for (let i = 0; i < allCoins.length; i++) {
-        if (allCoins[i][0] === coinHeroName && allCoins[i][7] > 0 && allCoins[i][6] > 0 && allCoins[i][5] > 0) { buy(allCoins[i]) }        
+        //MediumStijgings% > 0 EN ShortStijgings% > 0 EN LongTerm Trend moet stijgen
+        if (allCoins[i][0] === coinHeroName && allCoins[i][7] > 0 && allCoins[i][6] > 0 && allCoins[i][8] > 0) { buy(allCoins[i]) }        
       }
     }    
   }
@@ -196,7 +203,7 @@ function checkStatusSell() {
   if (aankoopArray.length >= 0) {
     for (let i = 0; i < allCoins.length; i++) {
         for (let o = 0; o < aankoopArray.length; o++) {
-          if (aankoopArray[o][0] === allCoins[i][0] && allCoins[i][7] <= 0 && allCoins[i][5] < 0) {
+          if (aankoopArray[o][0] === allCoins[i][0] && allCoins[i][7] <= 0 && allCoins[i][8] < 0) {
             sell(aankoopArray[o],allCoins[i])
           } 
         }
@@ -233,6 +240,7 @@ function sell(aankoopdata,verkoopdata) {
   console.log('Munt verkocht: ' + aankoopdata[0] + ' Buy= ' + buyPrice + ' Sell= ' + sellPrice)
   console.log('Saldo Euros = ' + geldEUR)
   console.log(aankoopArray)
+  
 
 }
 
