@@ -198,7 +198,7 @@ function checkStatus() {
   }
   
 }
-
+// Deze ff bekijken... Verkoopt niet goed... Niet zoals ik het zou doen
 function checkStatusSell() {
   if (aankoopArray.length >= 0) {
     for (let i = 0; i < allCoins.length; i++) {
