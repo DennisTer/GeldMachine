@@ -27,6 +27,7 @@ const bitvavo = require('bitvavo')().options({
   })
 var ema = require('exponential-moving-average');
 var sma = require('sma');
+const { Console } = require('console')
 let limitRemaining;
 const coins = ['HOT','BTC','ELF'];
 let timeStamps = [];
@@ -45,6 +46,9 @@ let feeFactor = 1.002;
 let aankoopArray = [];
 let digiEUR = 0;
 let huidigePrijsAangekocht = 0;
+let muntLong = 0;
+let muntMedium = 0;
+let muntShort = 0;
 
 //Setting the format for the Simple Moving Averager
 var format = function(n) {
@@ -123,7 +127,10 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
         var price = allCoins[i][1][allCoins[i][1].length-1]
         huidigePrijsAangekocht = parseFloat(price)
         digiEUR = parseFloat(aankoopArray[0][2])*parseFloat(price)
-        console.log('Fired!!!!   ' + huidigePrijsAangekocht + '   ' + digiEUR) 
+        muntLong = allCoins[i][8]
+        muntMedium = allCoins[i][7]
+        muntShort = allCoins[i][6]
+        //console.log('Fired!!!!   ' + huidigePrijsAangekocht + '   ' + digiEUR) 
         
       }
     }
@@ -142,11 +149,18 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     if ( stijging > coinHero) { 
       coinHero = stijging;
       coinHero2 = stijgingmedium;
+      coinHeroArr = allCoins[i];
       coinHeroName = allCoins[i][0]; 
     }
     //*******   
   }
-  console.log('Sterkste Coin= ' + coinHeroName + ' met een sterkte van ' + coinHero.toFixed(2) + '. geldEUR= ' + geldEUR.toFixed(2) + '. TOTAAL=' + (geldEUR + digiEUR).toFixed(2) + '. Huidige Prijs= ' + huidigePrijsAangekocht + ' Gekocht voor= ' + aankoopArray[1])
+  if (aankoopArray.length > 0) {
+    console.log('Gekochte munt: ' + aankoopArray[0] + '. Ingekocht voor: ' + aankoopArray[1] + '. Hoeveelheid= ' + aankoopArray[2])
+    console.log('Delta Short SMA: ' + muntShort + '. Delta Medium SMA: ' + muntMedium + '. Long Trend= ' + muntLong)
+    var resultaat = (huidigePrijsAangekocht*aankoopArray[2])-(aankoopArray[1]*aankoopArray[2])
+    console.log('Huidige prijs= ' + huidigePrijsAangekocht + '. Resultaat= ' + resultaat + '. TOTAAL = ' + digiEUR + ' EURO')
+
+  }
   //Hieronder halen we de tijd binnen van de bitvavo server. Maar omdat die in Frankfurt staat
   //kun je net zo goed de servertijd nemen met Date.now(). Oftewel lokale computer tijd.
   //We halen ook de API call limiet binnen met limitRemaining = bitvavo.getRemainingLimit().
