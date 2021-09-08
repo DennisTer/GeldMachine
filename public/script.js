@@ -7,6 +7,7 @@ let shortSMA = [1,1];
 let mediumSMA = [3,2];
 let longSMA = [2,1];
 let digitaleEuro;
+let lastEUROS;
 var ctx = document.getElementById('myChart').getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'line',
@@ -70,6 +71,8 @@ socket.on('BuyStatus', function(aankoopArray, digiEUR, pricess , sSMA, mSMA, lSM
     console.log('BUY Status recieved, updating the chart')
     var coin = document.getElementById('trackCoin')
     coin.innerText = aankoopArray[0][0] + '. Waarde in Euros = ' + digiEUR.toFixed(2)
+    
+
     //console.log(pricess)
     //console.log(sSMA)
     let sSMAfloats = []
@@ -93,11 +96,13 @@ socket.on('BuyStatus', function(aankoopArray, digiEUR, pricess , sSMA, mSMA, lSM
     myChart.data.datasets[2].data = mSMAfloats;
     myChart.data.datasets[3].data = lSMAfloats;
     myChart.update();
-    play()
+    //play()
     console.log( pricess.length + ' ' + sSMAfloats.length + ' ' + mSMAfloats.length + ' ' + lSMAfloats.length )
     
 
     digitaleEuro = digiEUR
+    if ( digitaleEuro > lastEUROS) { play() }
+    lastEUROS = digitaleEuro
     
 });
 

@@ -32,14 +32,16 @@ const { Console } = require('console')
 let limitRemaining;
 //const coins = ['HOT','BTC','ELF'];
 let timeStamps = [];
-let smaShortPeriod = 2;
-let smaMediumPeriod = 4;
-let smaLongPeriod = 8;
+let smaShortPeriod = 20;
+let smaMediumPeriod = 50;
+let smaLongPeriod = 200;
 let allCoins = []; //Multi dimensional array of all coins and prices and trends.. Gonna be HUGE!!
 let buildALLCOINS = 0;
+let buytimer = 0;
 let coinHero;
 let coinHero2;
 let coinHeroName;
+let bestCoins = [];
 
 //Virtuele coin om te testen...
 let geldEUR = 1000;
@@ -70,7 +72,7 @@ function intervalFunc() {
   bitvavo.websocket.tickerPrice({})  
 }
 
-setInterval(intervalFunc,20000);
+setInterval(intervalFunc,5000);
 
 
 // Aan de hand van korte en lang lopende gemiddelden kan de trend worden bepaald. Als het kort lopende
@@ -105,6 +107,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   coinHero = -100000000;
   coinHero2= -100000000;
   coinHeroName = '';
+  bestCoins = []
   //******
   // Hieronder stoppen we de SMA's in de allCoins array
   // Alsmede de stijging adhv de lopende gemiddeldes SMA's
@@ -156,16 +159,48 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     //      allCoins[i][8] is de sterkte van de Long trend * 1000 wat niks is als een check of de Long trend omhoog gaat.
     // 3 - De huidige prijs moet hoger liggen als de laatste waarde van de Long trend
     //De beste coinHero word gebruikt al aankoop munt.
-    //   && allCoins[i][5][allCoins[i][5].lenght-1] <= allCoins[i][1]
-    if ( stijging > 0 && stijgingmedium > 0 && stijging > coinHero && allCoins[i][8] > 5 ) { 
-      coinHero = stijging;
-      coinHero2 = stijgingmedium;
-      coinHeroArr = allCoins[i];
-      coinHeroName = allCoins[i][0];
-      console.log('CoinHero = ' + coinHeroName + '. Met stijging: ' + coinHero) 
+    //   && allCoins[i][5] <= allCoins[i][1]
+    var lp =  allCoins[i][1][allCoins[i][1].length-1]
+    //  console.log(allCoins[i][5] + '<-- Last avgLong, last price --->' + parseFloat(lp))
+    //  De checkstatusSELL isa nu wel aardig... Daar moet aankoop ook op gebaseerd zijn!!!!!!!!
+    //
+    // Verbouwing coinHero.....
+    // bestCoins word een array van long term stijgende coins waaruit later gefilterd word
+    if ( allCoins[i][8] > 5 ) {      
+      bestCoins.push(allCoins[i]) // Een array met alle stijgende munten
+      //Nu gaan we na de loop de coin zoeken die het diepst onder de trend zit      
     }
     //*******   
   }
+  //Hier filteren we bestCoins array om de munt te zoeken die het diepst onder de Long trend zit
+  //
+  var deltaMax = 0
+  for (let i = 0; i < bestCoins.length; i++) {
+    var lastprice = bestCoins[i][1][bestCoins[i][1].length-1] // allCoins[i][1][allCoins[i][1].length-1]
+    var lastAVG = bestCoins[i][5]
+    var deltaMedium = lastprice - lastAVG
+    //Als de beste munt steed opnieuw goed scoort hou dan de timer hoog om verkoop tegen te gaan
+    if ( bestCoins[i][0] === aankoopArray[0] && buytimer < 500 ) { buytimer + 25}
+    
+    if ( deltaMedium < deltaMax && deltaMedium < 0) {
+      coinHeroArr = bestCoins[i]
+      coinHeroName = bestCoins[i][0]
+      deltaMax = deltaMedium
+      console.log( 'coinHero=' + coinHeroName + '. lastprice=' + lastprice + '.lastAVG=' + lastAVG + '.DeltaMedium= ' + deltaMedium)
+    } 
+  }
+  //console.log(coinHeroName + ' Delta Max= ' + deltaMax)
+  //De munt gefilterd is een munt die stijgt en momenteel het verst onder het gemiddelde ligt.
+
+  //coinHero = bestCoins[i][0];
+  //coinHero2 = stijgingmedium;
+  //coinHeroArr = allCoins[i];
+  //coinHeroName = bestCoins[i][0];
+  //console.log('CoinHero = ' + coinHeroName + '. Met stijging: ' + coinHero)
+  //var lp =  allCoins[i][1][allCoins[i][1].length-1]
+  //console.log(allCoins[i][5] + '<-- Last avgLong, last price --->' + parseFloat(lp))
+
+
   if (aankoopArray.length > 0) {
     console.log('Gekochte munt: ' + aankoopArray[0][0] + '. Ingekocht voor: ' + aankoopArray[0][1] + '. Hoeveelheid= ' + aankoopArray[0][2])
     console.log('Delta Short SMA: ' + muntShort + '. Delta Medium SMA: ' + muntMedium + '. Long Trend= ' + muntLong)
@@ -181,6 +216,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
       timeStamps.push(response.time)
       
       buildALLCOINS += 1;
+      buytimer -= 1;
       
       limitRemaining = bitvavo.getRemainingLimit()
     } else {
@@ -199,8 +235,9 @@ function checkStatus() {
   if (buildALLCOINS > smaLongPeriod) {
     if (geldEUR > 10) {
       for (let i = 0; i < allCoins.length; i++) {
-        //MediumStijgings > 0 EN ShortStijgings% > 0 EN LongTerm Trend moet stijgen
-        if (allCoins[i][0] === coinHeroName) { buy(allCoins[i]) }        
+        //Welke munt geschikt is te kopen word bij coinHero en bestCoin bepaald
+        if (allCoins[i][0] === coinHeroName) { buy(allCoins[i]) }
+        buytimer = 75        
       }
     }    
   }
@@ -213,10 +250,11 @@ function checkStatus() {
 //
 // allCoins array = [entry.market, [parseFloat(entry.price)],[Date.now()],'short','medium','long','SterkteShort','Sterktemedium','TrendLongPLUS of MIN']
 function checkStatusSell() {
-  if (aankoopArray.length >= 0) {
+  if (aankoopArray.length >= 0 && buytimer <= 0) {
     for (let i = 0; i < allCoins.length; i++) {
+      var lp =  allCoins[i][1][allCoins[i][1].length-1]
         for (let o = 0; o < aankoopArray.length; o++) {
-          if (aankoopArray[o][0] === allCoins[i][0] && allCoins[i][3][allCoins[i][3].lenght-1] <= 0 && allCoins[i][5][allCoins[i][5].lenght-1] >= allCoins[i][1])  {
+          if (aankoopArray[o][0] === allCoins[i][0] && allCoins[i][3] <= allCoins[i][4] && lp < allCoins[i][4])  {
             sell(aankoopArray[o],allCoins[i])
           } 
         }
@@ -269,4 +307,4 @@ io.on('connection', socket => {
 
 
 
-server.listen(3000)
+server.listen(3000, '0.0.0.0')
