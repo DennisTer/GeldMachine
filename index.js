@@ -23,6 +23,7 @@ const bitvavo = require('bitvavo')().options({
 var ema = require('exponential-moving-average');
 var sma = require('sma');
 const { Console } = require('console')
+const { VERSION } = require('ejs')
 let limitRemaining;
 let ticker24hr = [];
 let ticker24hrTimestamp;
@@ -30,12 +31,14 @@ let marketSumOfPrices; // een beveiliging om een crashende markt te vinden... To
 let marketSumOfPricesOld;
 let smaMarketSum;
 let wholeMarketTrend;
+let wholeMarketTrend2min;
 let MarketSumArray = [];
 let MarketSumArrayTimes =[];
 let timeStamps = [];
-let smaShortPeriod = 4;
-let smaMediumPeriod = 8;
-let smaLongPeriod = 21; //Geen idee waarom maar 210 is de langste periode mogelijk....
+let smaShortPeriod = 2;
+let smaMediumPeriod = 5;
+let smaLongPeriod = 20; //Geen idee waarom maar 210 is de langste periode mogelijk....
+let checkDelayTimer = 0;
 let allCoins = []; //Multi dimensional array of all coins and prices and trends.. Gonna be HUGE!!
 let buildALLCOINS = 0;
 let coinHeroName;
@@ -182,9 +185,9 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     //
     //  In plaats van optellen zou er ook gekozen kunnen worden om te vermenigvuldigen van de scores. Dit leverd waarschijnlijk
     //  een betrouwbaarder resultaat op. Maar het werkt nu op zich al goed. Alleen is de 24hrs trend misschien iets te sterk.
-    var score24hrsTrend = parseFloat(allCoins[i][9]) * 8  // was 10.
-    var score1hrsTrend = parseFloat(allCoins[i][11]) * 8  //
-    var scoreLongTrend = parseFloat(allCoins[i][8]) * 8  // Was 2 (om te voorkomen dat je munten koopt in resistance)
+    var score24hrsTrend = parseFloat(allCoins[i][9]) * 1  // was 10.
+    var score1hrsTrend = parseFloat(allCoins[i][11]) * 15  //
+    var scoreLongTrend = parseFloat(allCoins[i][8]) * 10  // Was 2 (om te voorkomen dat je munten koopt in resistance)
     var scoreWholeMarket =  parseFloat(wholeMarketTrend) * 100 // Deze weegt extra zwaar om kopen in een neergaande totaal markt te voorkomen
     allCoins[i][10] = score24hrsTrend + score1hrsTrend + scoreLongTrend + scoreWholeMarket
     if (aankoopArray.length > 0) {      
@@ -236,6 +239,8 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   if (MarketSumArrayTimes.length > 100) { MarketSumArrayTimes.shift() } // Hou de array kort
   if (smaMarketSum.lenght > 100) { smaMarketSum.shift() } // Hou de array kort
   wholeMarketTrend = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[0])/smaMarketSum[smaMarketSum.length-1] * 100); // percentage trend
+  var TwoMinutes = 120 / loopinterval
+  wholeMarketTrend2min = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[smaMarketSum.length-TwoMinutes])/smaMarketSum[smaMarketSum.length-1] * 100);
   //console.log('Som van Prijzen = ' + marketSumOfPrices.toFixed(1) + '. Whole Market Trend = ' + wholeMarketTrend.toFixed(2) + ' %')
   io.sockets.emit('MarketStatus', MarketSumArray, MarketSumArrayTimes, wholeMarketTrend)
   //Hieronder halen we de tijd binnen van de bitvavo server. Maar omdat die in Frankfurt staat
@@ -244,7 +249,8 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   bitvavo.time((error, response) => {
     if (error === null) {
       timeStamps.push(response.time)    
-      buildALLCOINS += 1;      
+      buildALLCOINS += 1;
+      checkDelayTimer += 1;      
       limitRemaining = bitvavo.getRemainingLimit()
     } else {
       console.log('Handle the error here', error)
@@ -252,8 +258,12 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     
   })
   //Virtueel handelssysteem om te testen
+  if ( aankoopArray.length < 1 && checkDelayTimer > 10 ){
   checkBuy();
-  //checkSell();
+  }
+  if ( aankoopArray.length > 0 && checkDelayTimer > 10 ){ 
+  checkSell();
+  }
   //io.sockets.emit('Status', buildALLCOINS, coinHeroName)
   //console.log(allCoins[24])
   
@@ -261,7 +271,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
 
 
 
-//Virtueel handelssysteem om te testen en te tweaken checkStatus, buy and sell
+// Virtueel handelssysteem om te testen en te tweaken checkStatus, buy and sell
 //   Hier moet ie de beste munten scannen en inkopen als de prijs ver onder de long SMA ligt
 //   om de meeste potentiele winst uit een munt te persen. <---- TOOO DOOOOOOO
 function checkBuy() {
@@ -281,11 +291,42 @@ function checkBuy() {
 
 }
 // Deze tweaken en testen
-// allCoins array = [entry.market, [parseFloat(entry.price)],[Date.now()],'short','medium','long','SterkteShort','Sterktemedium','TrendLongPLUS of MIN']
-function checkSell() {
-  
-}
+//
+// checkSell() moet de aangekochte munt testen op verkoop 'gewicht'. Hierbij kan gedacht worden aan
+// --> Meten of de munt nog steeds goed scoort voor aankoop
+// --> De markt toetsen op dalingen
+// --> De munt zelf toetsen na winst. Een verkoop bij winst moet wel uit kunnen qua fee's
+// --> Testen op resistance, higher highs higher lows, lower highs lower lows.  ---> Te moeilijk......
+//
+//allCoins.push([entry.market, [parseFloat(entry.price)],[Date.now()],'short','medium','long','SterkteShort','Sterktemedium','smaLong + of -', '24hrsPercentage', 'ScoringsGewicht', '1hrsPercentage'])
+//Waarschijnlijk is het beter om op puur arbitrage een verkoop beslissing te maken
+//  ??? Keldert de markt hard
+//  ??? Zit ik boven mijn winst target of onder mijn verlies target
+//  ??? Zijn er andere munten waar ik beter mijn geld in kan stoppen
+//  ??? Stijgt de munt uberhaupt wel
 
+
+function checkSell() {
+  if ( aankoopArray.length > 0 ) {
+  for (let i = 0; i < allCoins.length; i++) {
+    if ( allCoins[i][0] === aankoopArray[0][0] ) {
+      //Scorings systeem verkoop
+      var scoreShortSterkte = allCoins[i][6] * 2 // De sterkte van de short trend boven de lange trend SMA ( stijgt de munt sterk? )
+      var scoreMediumSterkte = allCoins[i][7] * 2 // De sterkte van de medium trend boven de lange trend SMA ( stijgt de munt sterk? )
+      var scoreLongTrendPercent = allCoins[i][8] * 2 // De sterkte van de lange trend SMA
+      var scoreWholeMarket2min = wholeMarketTrend2min * 2 // De sterkte van de korte hele markt trend.
+      var vorigePrijs = allCoins[i][1][allCoins[i][1].length-2]
+      var laatstePrijs = allCoins[i][1][allCoins[i][1].length-1]
+      var scrorePrijsPercentage = ((laatstePrijs - vorigePrijs) / laatstePrijs) * 100 // Score op basis van prijs verandering
+      var verkoopScore = scoreShortSterkte + scoreMediumSterkte + scoreLongTrendPercent + scoreWholeMarket2min + scrorePrijsPercentage
+      aankoopArray[0][3] = verkoopScore
+      console.log( verkoopScore )
+      console.log( 'aankoop naam= ' + aankoopArray[0][0] + ' coin naam = ' + allCoins[i][0])
+      if ( verkoopScore < 0) { sell(aankoopArray[0],allCoins[i]) }
+    }
+  }
+}
+}
 
 function buy(coindata) {
   var prices = coindata[1]
@@ -294,10 +335,11 @@ function buy(coindata) {
   geldEUR = geldEUR / feeFactor  
   var aankoophoeveelheid = geldEUR / price
   geldEUR = geldEUR - (aankoophoeveelheid * price)
-  aankoopArray.push([name,price,parseFloat(aankoophoeveelheid)])
+  aankoopArray.push([name,price,parseFloat(aankoophoeveelheid),'verkoopScore'])
   console.log('Ingekocht munt ' + name + ' hoeveelheid = ' + aankoophoeveelheid + ' voor prijs: ' + price +'. En SCORE = ' + coindata[10] )
   console.log('Saldo Euro = ' + geldEUR)
   console.log(aankoopArray)
+  checkDelayTimer = 0;
   
 }
 
@@ -312,6 +354,7 @@ function sell(aankoopdata,verkoopdata) {
   console.log('Munt verkocht: ' + aankoopdata[0] + ' Buy= ' + buyPrice + ' Sell= ' + sellPrice)
   console.log('Saldo Euros = ' + geldEUR)
   console.log(aankoopArray)
+  checkDelayTimer = 0;
 }
 
 io.on('connection', socket => {

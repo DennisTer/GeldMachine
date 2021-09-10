@@ -94,7 +94,7 @@ socket.on('BuyStatus', function(aankoopArray, digiEUR, pricess , sSMA, mSMA, lSM
     var coin = document.getElementById('trackCoin')
     coin.innerText = aankoopArray[0][0] + '. Totaal Euros = ' + digiEUR.toFixed(2) + '. En Score = ' + score.toFixed(2)
     var coin2 = document.getElementById('trackCoin2')
-    coin2.innerText = '24 Hrs trend = ' + hr24percentage + '%. 1 Hr trend = ' + hr1percentage + '%.'
+    coin2.innerText = '24 Hrs trend = ' + hr24percentage.toFixed(2) + '%. 1 Hr trend = ' + hr1percentage.toFixed(2) + '%.'
     
 
     //console.log(pricess)
