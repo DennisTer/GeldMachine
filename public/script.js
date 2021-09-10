@@ -9,6 +9,7 @@ let longSMA = [2,1];
 let digitaleEuro;
 let lastEUROS;
 var ctx = document.getElementById('myChart').getContext('2d');
+var ctx_2 = document.getElementById('myChartMarket').getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -52,7 +53,28 @@ var myChart = new Chart(ctx, {
         }
     }
 });
-
+var myChartMarket = new Chart(ctx_2, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Som van alle prijzen',
+            data: prices,
+            backgroundColor: 'black',
+            borderColor: 'black',
+            lineTension: 0.5           
+        }
+    ],
+      
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: false
+            }
+        }
+    }
+});
 
 
 socket.on('user-connected', function(msg) {
@@ -67,10 +89,12 @@ socket.on('Test', function() {
     console.log('Recieved TEST from server')
 });
 
-socket.on('BuyStatus', function(aankoopArray, digiEUR, pricess , sSMA, mSMA, lSMA, lab) {
+socket.on('BuyStatus', function(aankoopArray, digiEUR, pricess , sSMA, mSMA, lSMA, lab, score, hr1percentage, hr24percentage) {
     console.log('BUY Status recieved, updating the chart')
     var coin = document.getElementById('trackCoin')
-    coin.innerText = aankoopArray[0][0] + '. Waarde in Euros = ' + digiEUR.toFixed(2)
+    coin.innerText = aankoopArray[0][0] + '. Totaal Euros = ' + digiEUR.toFixed(2) + '. En Score = ' + score.toFixed(2)
+    var coin2 = document.getElementById('trackCoin2')
+    coin2.innerText = '24 Hrs trend = ' + hr24percentage + '%. 1 Hr trend = ' + hr1percentage + '%.'
     
 
     //console.log(pricess)
@@ -104,6 +128,18 @@ socket.on('BuyStatus', function(aankoopArray, digiEUR, pricess , sSMA, mSMA, lSM
     if ( digitaleEuro > lastEUROS) { play() }
     lastEUROS = digitaleEuro
     
+});
+
+socket.on('MarketStatus', function(MarketSumArray, MarketSumArrayTimes, wholeMarketTrend) {
+    if (wholeMarketTrend){
+    console.log('MARKET Status recieved, updating the whole market chart')
+    var marketpercent = document.getElementById('wholeMarket')
+    marketpercent.innerText = 'Trend van de hele markt = ' + wholeMarketTrend.toFixed(2) + ' %'
+    
+    myChartMarket.data.labels = MarketSumArrayTimes;
+    myChartMarket.data.datasets[0].data = MarketSumArray;
+    myChartMarket.update();
+    }
 });
 
 function play() {
