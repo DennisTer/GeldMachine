@@ -75,7 +75,18 @@ var myChartMarket = new Chart(ctx_2, {
         }
     }
 });
-
+//Variabellen die gesynchroniseerd worden met de server via settings. Allen starten met een S
+let SsmaShortPeriod;
+let SsmaMediumPeriod;
+let SsmaLongPeriod;
+let Sscore24hrsTrendFactor;
+let Sscore1hrsTrendFactor;
+let SscoreLongTrendFactor;
+let SscoreWholeMarketFactor;
+let SlowRSI;
+let SverkoopFactor1// factor scoreLongTrendPercent
+let SverkoopFactor2// factor scoreWholeMarket2min
+let SverkoopFactor3// factor scoreAankoopPrijsPercentage
 
 socket.on('user-connected', function(msg) {
     console.log('We Have a COnneectionnnnn!!!!')
@@ -175,8 +186,81 @@ socket.on('Buy', function(text) {
     consoleDiv.appendChild(a);
 });
 
+socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, verkoopFactor1, verkoopFactor2, verkoopFactor3) {
+    SsmaShortPeriod = smaShort
+    SsmaMediumPeriod = smaMedium
+    SsmaLongPeriod = smaLong
+    Sscore24hrsTrendFactor = score24hrsTrendFactor
+    Sscore1hrsTrendFactor = score1hrsTrendFactor 
+    SscoreLongTrendFactor = scoreLongTrendFactor
+    SscoreWholeMarketFactor = scoreWholeMarketFactor
+    SlowRSI = lowRSI
+    SverkoopFactor1 = verkoopFactor1 // factor scoreLongTrendPercent
+    SverkoopFactor2 = verkoopFactor2 // factor scoreWholeMarket2min
+    SverkoopFactor3 = verkoopFactor3 // factor scoreAankoopPrijsPercentage
+    $("#interface").load("settings.html",function(){
+        document.getElementById("vol1").value = SsmaShortPeriod;
+        document.getElementById("vol2").value = SsmaMediumPeriod;
+        document.getElementById("vol3").value = SsmaLongPeriod;
+        document.getElementById("aankoop1").value = Sscore24hrsTrendFactor;
+        document.getElementById("aankoop2").value = Sscore1hrsTrendFactor;
+        document.getElementById("aankoop3").value = SscoreLongTrendFactor;
+        document.getElementById("aankoop4").value = SscoreWholeMarketFactor;
+        document.getElementById("RSIaankoop").value = SlowRSI;
+        document.getElementById("verkoopScore1").value = SverkoopFactor1;
+        document.getElementById("verkoopScore2").value = SverkoopFactor2;
+        document.getElementById("verkoopScore3").value = SverkoopFactor3;
+    });
+    
+    //console.log(SsmaShortPeriod + '  ' + SsmaMediumPeriod + '  ' + SsmaLongPeriod)
+});
 function play() {
     var audio = document.getElementById("audio");
     audio.play();
   }
 
+  function sellCoin() {
+      socket.emit('sellCoin')
+  }
+
+  /* Set the width of the side navigation to 250px and the left margin of the page content to 250px */
+function openNav() {
+    document.getElementById("mySidenav").style.width = "250px";
+    document.getElementById("main").style.marginLeft = "250px";
+  }
+  
+  /* Set the width of the side navigation to 0 and the left margin of the page content to 0 */
+  function closeNav() {
+    document.getElementById("mySidenav").style.width = "0";
+    document.getElementById("main").style.marginLeft = "0";
+  }
+
+  function info() {
+                $("#interface").load("info.html");    
+  }
+
+  function settings() {
+    socket.emit('settings')
+    
+  }
+
+  function clearInterface() {
+    var interface = document.getElementById('interface')
+    interface.innerHTML = ''
+  }  
+
+  function sendSettings(id,value) {
+    SsmaShortPeriod = document.getElementById("vol1").value;
+    SsmaMediumPeriod = document.getElementById("vol2").value;
+    SsmaLongPeriod = document.getElementById("vol3").value;
+    Sscore24hrsTrendFactor = document.getElementById("aankoop1").value;
+    Sscore1hrsTrendFactor = document.getElementById("aankoop2").value;
+    SscoreLongTrendFactor = document.getElementById("aankoop3").value;
+    SscoreWholeMarketFactor = document.getElementById("aankoop4").value;
+    SlowRSI = document.getElementById("RSIaankoop").value;
+    SverkoopFactor1 = document.getElementById("verkoopScore1").value;
+    SverkoopFactor2 = document.getElementById("verkoopScore2").value;
+    SverkoopFactor3 = document.getElementById("verkoopScore3").value;
+    socket.emit('newSettings', SsmaShortPeriod, SsmaMediumPeriod, SsmaLongPeriod, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, SverkoopFactor1, SverkoopFactor2, SverkoopFactor3)
+    console.log('New Settings Send to server')
+  }

@@ -1,0 +1,91 @@
+<h1>Instellingen</h1>
+<h3>Verzonden instellingen worden overgenomen op de server</h3>
+<p></p>
+<p>Trend Periodes</p>
+<p>Er zijn drie trend periodes. Kort, middel en lang. Deze periodes laat de server lopende gemiddeldes berekenen oftewel SMA's (Simple Moving Averages). Standaard setting is 10, 50, 200. Door deze settings te veranderen beinvloed je het gedrag van de Geld Machine.</p>
+<form action="javascript:sendSettings()">
+    <label for="vol1">Korte trend (1 tot 29):</label>
+    <input type="number" id="vol1" name="vol1" min="1" max="29">
+    <p></p>
+    <input type="submit">
+  </form>
+  <form action="javascript:sendSettings()">
+    <label for="vol2">Middel trend (30 tot 79):</label>
+    <input type="number" id="vol2" name="vol2" min="30" max="79">
+    <p></p>
+    <input type="submit">
+  </form>
+  <form action="javascript:sendSettings()">
+    <label for="vol3">Lange trend (80 tot 210):</label>
+    <input type="number" id="vol3" name="vol3" min="80" max="210">
+    <p></p>
+    <input type="submit">
+  </form>
+  <p></p>
+<p>Aankoop scores</p>
+<p>De aankoop settings bepalen het aankoop gedrag van de Geld Machine.</p>
+<p>De 4 scores worden bij elkaar opgeteld en hoe hoger de score hoe interessanter de munt om te kopen.</p>
+<p>Door de score factors te bepalen kun je gewicht geven aan bepaalde scores van 0.1 tot 100.</p>
+<form action="javascript:sendSettings()">
+    <label for="aankoop1">24 hrs trend score factor:</label>
+    <input type="number" id="aankoop1" name="aankoop1" min="1" max="100">
+    <p>24 uurs percentage van prijsstijging score.</p>
+    <input type="submit">
+  </form>
+  <form action="javascript:sendSettings()">
+    <label for="aankoop2">1 hrs trend score factor:</label>
+    <input type="number" id="aankoop2" name="aankoop2" min="1" max="100">
+    <p>1 uurs percentage van prijsstijging score.</p>
+    <input type="submit">
+  </form>
+  <form action="javascript:sendSettings()">
+    <label for="aankoop3">Lange SMA trend score factor:</label>
+    <input type="number" id="aankoop3" name="aankoop3" min="1" max="100">
+    <p>Hoe harder de actuele trend stijgt hoe hoger de score.</p>
+    <input type="submit">
+  </form>
+  <form action="javascript:sendSettings()">
+    <label for="aankoop4">SMA van de hele markt score factor:</label>
+    <input type="number" id="aankoop4" name="aankoop4" min="1" max="100">
+    <p>Hoe harder de gehele markt procentueel stijgt hoe hoger deze score.</p>
+    <input type="submit">
+  </form>
+  <p></p>
+<p>RSI aankoop</p>
+<p>De RSI (Relative Strenght Index) geeft de huidige waarde van de munt ten opzichte van wat hij momenteel waard zou moeten zijn.
+    Dit is een goede indicator om aan te kopen. Als de prijs ruim onder de gemiddelde waarde van de munt ligt is het ideaal om
+    de munt in te kopen. Zo maximaliseer je je aankoop. 50 is de waarde van de munt. Dus daaronder moet je zitten. De experts nemen 30 als standaard waarde.
+    De Geld Machine zal de best gescoorde munt inkopen als de huidige prijs onder de RSI setting valt.
+</p>
+<form action="javascript:sendSettings()">
+    <label for="RSIaankoop">Lage RSI setting (minder als 50):</label>
+    <input type="number" id="RSIaankoop" name="RSIaankoop" min="1" max="50">
+    <p>De RSI setting waaronder de Geld Machine de beste munt gaat inkopen</p>
+    <input type="submit">
+  </form>
+  <p></p>
+<p>Verkoop scores</p>
+<p>Er zijn 3 verkoop scores waarmee de Gled Machine bepaald of een munt verkocht gaat worden.
+    1- De score van de longtrend... Als deze goed stijgt heeft het weinig zin om te verkopen. Maar als deze daalt dan kun je over verkoop nadenken.
+    2- Score van de hele markt van de afgelopen 2 minuten. Dit is een veiligheids score. Als de markt in elkaar stort dan wil je graag van je coins af om je euros veilig te stellen.
+    3- Score aankoop prijs versus huidige prijs in procenten (Winst). Als je een bepaalde winst hebt behaald dan zou je kunnen verkopen.
+    Dit zijn wederom factoren.. Dus je kunt hieronder het gewicht bepalen van de 3 verkoop triggers.
+</p>
+<form action="javascript:sendSettings()">
+    <label for="verkoopScore1">Lange trend score factor:</label>
+    <input type="number" id="verkoopScore1" name="verkoopScore1" min="1" max="100">
+    <p></p>
+    <input type="submit">
+  </form>
+  <form action="javascript:sendSettings()">
+    <label for="verkoopScore2">Trend hele markt score factor:</label>
+    <input type="number" id="verkoopScore2" name="verkoopScore2" min="1" max="100">
+    <p></p>
+    <input type="submit">
+  </form>
+  <form action="javascript:sendSettings()">
+    <label for="verkoopScore3">Winst score factor:</label>
+    <input type="number" id="verkoopScore3" name="verkoopScore3" min="1" max="100">
+    <p></p>
+    <input type="submit">
+  </form>

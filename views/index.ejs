@@ -4,26 +4,39 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="page.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="/socket.io/socket.io.js" defer></script>
     <script src="script.js" defer></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js" defer></script>
     <title>Geld Machine</title>
 </head>
 <body>
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a onclick="info()">Informatie</a>
+        <a onclick="settings()">Instellingen</a>
+        <a onclick="clearInterface()">Server data</a>
+      </div>      
+<div id="main">
+    <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; open</span>
+    <div id="interface"></div>
     <h2>Live server data Geld Machine Bitvavo</h2>
     <h3 id='trackCoin'></h3>
     <h3 id='trackCoin2'></h3>
     <div>
         <canvas id="myChart"></canvas>
     </div>
+    <button onclick="sellCoin()">SELL COIN</button>
     <h3>Hele Bitvavo markt (Som van alle huidige prijzen)</h3>
     <h3 id='wholeMarket'></h3>
     <div>
         <canvas id="myChartMarket"></canvas>
-    </div>
+    </div>    
     <div id="consoleDiv">
         <h3>Printout Server Console</h3>
     </div>
     <audio id="audio" src="coin.wav"></audio>
+</div>
 </body>
 </html>
