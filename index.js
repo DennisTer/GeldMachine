@@ -6,6 +6,7 @@
 // ----> Tunen van de scoring gewichten voor elke munt en iedere trigger <--- Hier ook nog even over nadenken. Werkt aardig maar kan beter. Misschien in trapjes ipv 1 grote score.
 // ----> Als de prijs zakt gaat de verkoop score omhoog... Dat kan maar dan moeten de verkoop condities ook zo zijn gebouwd......
 // ----> Front end Settings interface verder uitbouwen... Nu bij verkoop aanbeland.
+// ----> Als je de settings veranderd koopt ie geen munt meer na verkoop oude munt....  :( :(
 
 
 require('dotenv').config()
@@ -38,7 +39,7 @@ let MarketSumArrayTimes =[];
 let timeStamps = [];
 let smaShortPeriod = 10;
 let smaMediumPeriod = 30;
-let smaLongPeriod = 200; //Geen idee waarom maar 210 is de langste periode mogelijk....
+let smaLongPeriod = 80; //Geen idee waarom maar 210 is de langste periode mogelijk....
 let checkDelayTimer = 0;
 let allCoins = []; //Multi dimensional array of all coins and prices and trends.. Gonna be HUGE!!
 let buildALLCOINS = 0;
@@ -47,15 +48,15 @@ let loopinterval = 5; //Loop interval in seconden
 let score24hrsTrendFactor = 0.2
 let score1hrsTrendFactor = 2
 let scoreLongTrendFactor = 2
-let scoreWholeMarketFactor = 100
-let lowRSI = 30;
-let verkoopFactor1 = 1 // factor scoreLongTrendPercent
+let scoreWholeMarketFactor = 2
+let lowRSI = 45;
+let verkoopFactor1 = 2 // factor scoreLongTrendPercent
 let verkoopFactor2 = 1 // factor scoreWholeMarket2min
-let verkoopFactor3 = 1 // factor scoreAankoopPrijsPercentage
+let verkoopFactor3 = 5 // factor scoreAankoopPrijsPercentage
 
 //Virtuele coin om te testen...
 let geldEUR = 1000;
-let feeFactor = 1.002;
+let feeFactor = 1.0025;
 let aankoopArray = [];
 let digiEUR = 0;
 
@@ -165,7 +166,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     var stijging = ((allCoins[i][3]-allCoins[i][5])/allCoins[i][5]) * 100; // Stijging tov longSMA
     var stijgingmedium = ((allCoins[i][4]-allCoins[i][5])/allCoins[i][5]) * 100; // Stijging tov longSMA
     //wholeMarketTrend = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[0])/smaMarketSum[smaMarketSum.length-1] * 100); // percentage trend
-    var stijgingLong = ((parseFloat(avgLong[avgLong.length-1]) - parseFloat(avgLong[0])) / parseFloat(avgLong[avgLong.length-1])) * 100; // Stijging van Long SMA in %
+    var stijgingLong = ((parseFloat(avgLong[avgLong.length-1]) - parseFloat(avgLong[0])) / parseFloat(avgLong[0])) * 100; // Stijging van Long SMA in %
     if ( stijging != NaN) { allCoins[i][6] = parseFloat(stijging.toFixed(4)) } // Stop de stijging shorttov long in allCoins
     if ( stijgingmedium != NaN) { allCoins[i][7] = parseFloat(stijgingmedium.toFixed(4)) }// Stop de stijging medium tov long in allCoins
     if ( stijgingLong != undefined) { allCoins[i][8] = parseFloat(stijgingLong.toFixed(4)) }// Stop de stijging van long tov longtrend in allCoins
@@ -289,9 +290,9 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   if (MarketSumArray.length > 100) { MarketSumArray.shift() } // Hou de array kort
   if (MarketSumArrayTimes.length > 100) { MarketSumArrayTimes.shift() } // Hou de array kort
   if (smaMarketSum.lenght > 100) { smaMarketSum.shift() } // Hou de array kort
-  wholeMarketTrend = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[0])/smaMarketSum[smaMarketSum.length-1] * 100); // percentage trend
+  wholeMarketTrend = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[0])/smaMarketSum[0] * 100); // percentage trend
   var TwoMinutes = 120 / loopinterval
-  wholeMarketTrend2min = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[smaMarketSum.length-TwoMinutes])/smaMarketSum[smaMarketSum.length-1] * 100);
+  wholeMarketTrend2min = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[smaMarketSum.length-TwoMinutes])/smaMarketSum[smaMarketSum.length-TwoMinutes] * 100);
   //console.log('Som van Prijzen = ' + marketSumOfPrices.toFixed(1) + '. Whole Market Trend = ' + wholeMarketTrend.toFixed(2) + ' %')
   io.sockets.emit('MarketStatus', MarketSumArray, MarketSumArrayTimes, wholeMarketTrend)
   //Hieronder halen we de tijd binnen van de bitvavo server. Maar omdat die in Frankfurt staat
@@ -330,7 +331,7 @@ function checkBuy() {
   var besteMunt = -10000;
   var besteMuntData = [];
   if (wholeMarketTrend > 0 && buildALLCOINS > smaLongPeriod ) {
-    //We testen hieronder of het een munt betreft XXX-EUR
+    //We testen hieronder of het een munt betreft XXX-EUR en niet een munt naar munt
     var patt = new RegExp("-EUR");    
     for (let i = 0; i < allCoins.length; i++) {
       var res = patt.test(allCoins[i][0]);
@@ -391,7 +392,7 @@ function checkSell() {
       var verkoopScore = scoreLongTrendPercent + scoreWholeMarket2min + scroreAankoopPrijsPercentage
       aankoopArray[0][3] = parseFloat(verkoopScore)
       //console.log( verkoopScore )
-      console.log( 'aankoop naam= ' + aankoopArray[0][0] + '. Verkoop score = ' + verkoopScore + '. RSI = ' + allCoins[i][12] + '. scorePrijsPercentage = ' + scrorePrijsPercentage)
+      console.log( 'aankoop naam= ' + aankoopArray[0][0] + '. Verkoop score = ' + verkoopScore + '. RSI = ' + allCoins[i][12] + '. scoreAankoopPrijsPercentage = ' + scroreAankoopPrijsPercentage)
       //We verkopen als de markt crashed...
       if ( aankoopArray.length > 0 && scoreWholeMarket2min < -5 ) { 
         io.sockets.emit('Sell', 'The market crashed, Trying to save your EUROS', scoreWholeMarket2min)
@@ -399,6 +400,9 @@ function checkSell() {
          
       }
       //We verkopen als de munt goed gestegen is en de lange trend naar beneden zakt op een hoog moment
+      //Hier kunnen we een MOVING target van maken. BV.. Als de prijs nog stijgt stellen we de winst % hoger bij.
+      //  Dan blijft de munt langer door stijgen en word deze niet vroegtijdig verkocht.
+      //Hier kan ook nog een check op komen of er toevallig niet een veel beter munt is om in te investeren..
       if ( aankoopArray.length > 0 && scroreAankoopPrijsPercentage > 2 && scoreLongTrendPercent <= 0 && allCoins[i][12] > 70 && allCoins[i][12] < 100) {
         io.sockets.emit('Sell', 'Sold due to making good revenue but long trend is diving.', scoreLongTrendPercent)  
         sell(aankoopArray[0],allCoins[i])
@@ -476,18 +480,18 @@ io.on('connection', socket => {
       socket.emit('serverSettings', smaShortPeriod, smaMediumPeriod, smaLongPeriod, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, verkoopFactor1, verkoopFactor2, verkoopFactor3)
   })
   socket.on('newSettings', (SsmaShort, SsmaMedium, SsmaLong, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, SverkoopFactor1, SverkoopFactor2, SverkoopFactor3) => {
-    smaShortPeriod = SsmaShort;
-    smaMediumPeriod = SsmaMedium;
-    smaLongPeriod = SsmaLong; 
-    score24hrsTrendFactor = Sscore24hrsTrendFactor
-    score1hrsTrendFactor = Sscore1hrsTrendFactor
-    scoreLongTrendFactor = SscoreLongTrendFactor
-    scoreWholeMarketFactor = SscoreWholeMarketFactor
-    lowRSI = SlowRSI;
-    verkoopFactor1 = SverkoopFactor1 // factor scoreLongTrendPercent
-    verkoopFactor2 = SverkoopFactor2 // factor scoreWholeMarket2min
-    verkoopFactor3 = SverkoopFactor3 // factor scoreAankoopPrijsPercentage
-    console.log('Recieved new settings from user front end')
+    smaShortPeriod = parseFloat(SsmaShort);
+    smaMediumPeriod = parseFloat(SsmaMedium);
+    smaLongPeriod = parseFloat(SsmaLong); 
+    score24hrsTrendFactor = parseFloat(Sscore24hrsTrendFactor)
+    score1hrsTrendFactor = parseFloat(Sscore1hrsTrendFactor)
+    scoreLongTrendFactor = parseFloat(SscoreLongTrendFactor)
+    scoreWholeMarketFactor = parseFloat(SscoreWholeMarketFactor)
+    lowRSI = parseFloat(SlowRSI);
+    verkoopFactor1 = parseFloat(SverkoopFactor1) // factor scoreLongTrendPercent
+    verkoopFactor2 = parseFloat(SverkoopFactor2) // factor scoreWholeMarket2min
+    verkoopFactor3 = parseFloat(SverkoopFactor3) // factor scoreAankoopPrijsPercentage
+    console.log('Recieved new settings from user front end new smaShortPeriod = ' + smaShortPeriod)
 })     
 })
 
