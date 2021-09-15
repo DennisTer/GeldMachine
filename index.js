@@ -1,12 +1,22 @@
 // TO DO & BUGS
-// ----> Scoring/Gewichten tunen. Misschien X ipv +
+// ----> Scoring/Gewichten tunen. Misschien X ipv + <--- Gaat nu via Front End
 // ----> Verkoop systeem maken. Met escape als de markt crashed. <--- Draait al. Dubbele escape maken op de hele markt trend
 // ----> Bij aankoop inkopen als de munt laag onder de trend hangt (dus daarop wachten) <--- AF en werkt met RSI
-// ----> Bij verkoop verkopen als de munt hoog boven de trend zit (dus daarop wachten mits dat kan) <--- AF en werkt met RSI
+// ----> Bij verkoop verkopen als de munt hoog boven de trend zit (dus daarop wachten mits dat kan) <--- AF en werkt met RSI.. Werkt slecht dus gewoon verkopen als RSI > 50
 // ----> Tunen van de scoring gewichten voor elke munt en iedere trigger <--- Hier ook nog even over nadenken. Werkt aardig maar kan beter. Misschien in trapjes ipv 1 grote score.
-// ----> Als de prijs zakt gaat de verkoop score omhoog... Dat kan maar dan moeten de verkoop condities ook zo zijn gebouwd......
+// ----> Als de prijs zakt gaat de verkoop score omhoog... Dat kan maar dan moeten de verkoop condities ook zo zijn gebouwd...... <--- GEFIXED
 // ----> Front end Settings interface verder uitbouwen... Nu bij verkoop aanbeland.
-// ----> Als je de settings veranderd koopt ie geen munt meer na verkoop oude munt....  :( :(
+// ----> Als je de settings veranderd koopt ie geen munt meer na verkoop oude munt....  :( :( ----> GEFIXED
+// ----> Even een setje best munten maken om uit te kiezen.. BV 5 stuks. Dan gaat de aankoop wat sneller vanwege RSI.
+
+// FORMULE VERSCHIL IN PROCENTEN -----> ((Nieuw - oud) / oud) * 100 .... Niet weer vergeten gloeiende gloeiende!!!!
+// Een 'Cache' maken voor server berichten die bij connectie verstuurd worden van de laatste 20 berichten ofzo....
+//    Nu bij verversen pagina zie je de geschiedenis niet
+// Server Berichten onder elkaar plaatsen.....
+// Server STATUS maken zodat je kan zien wat er gaande is... 
+// VERZEND knopjes weghalen uit Settings... 1 Knopje is meer dan genoeg.
+
+// Als er een munt gekocht is toch door scannen blijven op betere..... Kan handig zijn!
 
 
 require('dotenv').config()
@@ -330,7 +340,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
 function checkBuy() {
   var besteMunt = -10000;
   var besteMuntData = [];
-  if (wholeMarketTrend > 0 && buildALLCOINS > smaLongPeriod ) {
+  if (wholeMarketTrend > -0.2 && buildALLCOINS > smaLongPeriod ) {
     //We testen hieronder of het een munt betreft XXX-EUR en niet een munt naar munt
     var patt = new RegExp("-EUR");    
     for (let i = 0; i < allCoins.length; i++) {
@@ -394,8 +404,8 @@ function checkSell() {
       //console.log( verkoopScore )
       console.log( 'aankoop naam= ' + aankoopArray[0][0] + '. Verkoop score = ' + verkoopScore + '. RSI = ' + allCoins[i][12] + '. scoreAankoopPrijsPercentage = ' + scroreAankoopPrijsPercentage)
       //We verkopen als de markt crashed...
-      if ( aankoopArray.length > 0 && scoreWholeMarket2min < -5 ) { 
-        io.sockets.emit('Sell', 'The market crashed, Trying to save your EUROS', scoreWholeMarket2min)
+      if ( aankoopArray.length > 0 && (scoreWholeMarket2min/verkoopFactor2) < -5 ) { 
+        io.sockets.emit('Sell', 'The market crashed, Trying to save your EUROS', (scoreWholeMarket2min/verkoopFactor2))
         sell(aankoopArray[0],allCoins[i])
          
       }
@@ -403,15 +413,23 @@ function checkSell() {
       //Hier kunnen we een MOVING target van maken. BV.. Als de prijs nog stijgt stellen we de winst % hoger bij.
       //  Dan blijft de munt langer door stijgen en word deze niet vroegtijdig verkocht.
       //Hier kan ook nog een check op komen of er toevallig niet een veel beter munt is om in te investeren..
-      if ( aankoopArray.length > 0 && scroreAankoopPrijsPercentage > 2 && scoreLongTrendPercent <= 0 && allCoins[i][12] > 70 && allCoins[i][12] < 100) {
-        io.sockets.emit('Sell', 'Sold due to making good revenue but long trend is diving.', scoreLongTrendPercent)  
+      if ( aankoopArray.length > 0 && (scroreAankoopPrijsPercentage/verkoopFactor3) > 2 && (scoreLongTrendPercent/verkoopFactor1) <= 0 && allCoins[i][12] > 50 && allCoins[i][12] < 100) {
+        io.sockets.emit('Sell', 'Sold due to making good revenue but long trend is diving.', (scoreLongTrendPercent/verkoopFactor1))  
         sell(aankoopArray[0],allCoins[i])
         
       }
       //We verkopen als de totale verkoopscore erg laag is
       //VANAF HIER VERDER WERKEN MET DE SETTINGS INTERFACE FRONT END
-      if ( aankoopArray.length > 0 && aankoopArray[0][3] < 0 && allCoins[i][12] > 70 && allCoins[i][12] < 100) {
+      if ( aankoopArray.length > 0 && aankoopArray[0][3] < 0 && allCoins[i][12] > 50 && allCoins[i][12] < 100) {
         io.sockets.emit('Sell', 'The coin was too weak. Sold it.', aankoopArray[0][3]) 
+        sell(aankoopArray[0],allCoins[i])
+         
+      }
+      //We verkopen als het een totale mislukking is
+      //Te ver zakt en de trend omlaag is
+      //----- EXPERIMENTEEL ----
+      if ( aankoopArray.length > 0 && (scroreAankoopPrijsPercentage/verkoopFactor3) < -2 && (scoreLongTrendPercent/verkoopFactor1) < 0 && allCoins[i][12] > 50 && allCoins[i][12] < 100) {
+        io.sockets.emit('Sell', 'The coin was a failure. Sold it.', (scoreLongTrendPercent/verkoopFactor1)) 
         sell(aankoopArray[0],allCoins[i])
          
       }
