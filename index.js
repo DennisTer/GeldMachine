@@ -7,14 +7,14 @@
 // ----> Als de prijs zakt gaat de verkoop score omhoog... Dat kan maar dan moeten de verkoop condities ook zo zijn gebouwd...... <--- GEFIXED
 // ----> Front end Settings interface verder uitbouwen... Nu bij verkoop aanbeland.
 // ----> Als je de settings veranderd koopt ie geen munt meer na verkoop oude munt....  :( :( ----> GEFIXED
-// ----> Even een setje best munten maken om uit te kiezen.. BV 5 stuks. Dan gaat de aankoop wat sneller vanwege RSI.
+// ----> Even een setje best munten maken om uit te kiezen.. BV 5 stuks. Dan gaat de aankoop wat sneller vanwege RSI. <--- AF
+// ---->   In allCoins komt een RATING te staan om deze set goede munten te vinden... <--- Werkte niet. Alternatief ingebouwd
 
 // FORMULE VERSCHIL IN PROCENTEN -----> ((Nieuw - oud) / oud) * 100 .... Niet weer vergeten gloeiende gloeiende!!!!
-// Een 'Cache' maken voor server berichten die bij connectie verstuurd worden van de laatste 20 berichten ofzo....
-//    Nu bij verversen pagina zie je de geschiedenis niet
-// Server Berichten onder elkaar plaatsen.....
+// Een 'Cache' maken voor server berichten die bij connectie verstuurd worden van de laatste 20 berichten ofzo.... <--- AF
+//    Nu bij verversen pagina zie je de geschiedenis niet <---- AF
+// Server Berichten onder elkaar plaatsen..... <--- AF hopelijk
 // Server STATUS maken zodat je kan zien wat er gaande is... 
-// VERZEND knopjes weghalen uit Settings... 1 Knopje is meer dan genoeg.
 
 // Als er een munt gekocht is toch door scannen blijven op betere..... Kan handig zijn!
 
@@ -55,14 +55,18 @@ let allCoins = []; //Multi dimensional array of all coins and prices and trends.
 let buildALLCOINS = 0;
 let coinHeroName;
 let loopinterval = 5; //Loop interval in seconden
-let score24hrsTrendFactor = 0.2
-let score1hrsTrendFactor = 2
-let scoreLongTrendFactor = 2
+let score24hrsTrendFactor = 1
+let score1hrsTrendFactor = 40
+let scoreLongTrendFactor = 80
 let scoreWholeMarketFactor = 2
-let lowRSI = 45;
-let verkoopFactor1 = 2 // factor scoreLongTrendPercent
-let verkoopFactor2 = 1 // factor scoreWholeMarket2min
-let verkoopFactor3 = 5 // factor scoreAankoopPrijsPercentage
+let lowRSI = 47;
+let verkoopFactor1 = 50 // factor scoreLongTrendPercent
+let verkoopFactor2 = 10 // factor scoreWholeMarket2min
+let verkoopFactor3 = 40 // factor scoreAankoopPrijsPercentage
+let marktkooppercentage = -0.2 // Percentage markt trend waar boven er gekocht mag worden
+let L1 = 2 // Percentage waarboven de prijs meelift in CheckSell
+let L2 = -5 // Percentage van de totale markt trend. Bij markt crash verkopen we alles.....
+let L3 = -3 // Percentage waarbij verkocht word als de prijs is gezakt...
 
 //Virtuele coin om te testen...
 let geldEUR = 1000;
@@ -74,6 +78,9 @@ let digiEUR = 0;
 var format = function(n) {
   return n.toFixed(8);
 };
+
+//Server Cache voor berichten
+let berichten = []
 
 app.set('view engine', 'ejs')
 app.use(express.static('public'))
@@ -260,35 +267,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
         };        
       }       
     }    
-  } //Vanaf hier zijn we uit de LOOP...............
-  //console.log('BTC Check ' + allCoins[20][1])
-  //console.log(allCoins[20][12] + ' RSI en loop counter = ' + buildALLCOINS)
-  //console.log('24Hrs % van ' + allCoins[20][0] + ' = ' + allCoins[20][9] + '. Met SCORE van ' + allCoins[20][10])
-    // io.sockets.emit('BuyStatus', aankoopArray, digiEUR, allCoins[i][1] ,avgShort, avgMedium, avgLong, allCoins[i][2])
-
-    // Vanaf hier alles verbouwen...
-
-    // Er moet minder gerekend worden op de korte termijn om spontane verkoop of valse aankoop te voorkomen
-    // Hierbij gaan we alle munten een score geven (een gewicht)
-    //  * De munt moet een opgaande trend hebben tov een dag terug (historie binnenhalen via ticker24hr)--> AF allCoins[i][9] in %
-    //  * De munt moet een opgaande trend hebben (allCoins[i][8] moet positief zijn)--> AF
-    //  * De hele markt moet stabiel zijn of stijgen. (Niet inkopen als de markt crashed!) -->AF wholeMarketTrend
-    //  * Bij inkoop moet er ingekocht worden als de prijs het verst onder de trend ligt om te maximaliseren --> AF laatste prijs tov allCoins[i][5]
-    //  * Bij verkoop moet er verkocht worden als de prijs ver boven de trend ligt om te maximaliseren --> AF laatste prijs tov allCoins[i][5]
-    // 
-    // Safety systeem moet gebouwd worden : ---> AF
-    //  * De gehele markt moet getoets worden op trend --> AF wholeMarketTrend (Inkoop en Verkoop trigger)
-    //  * Dit kan door alle munten op te tellen en te vergelijken met een stap eerder
-    //  Hiermee kan een goede markt worden aangetoond om te investeren
-    //  Maar nog belangrijker kun je op tijd uitstappen als de markt crashed.....
-    //
-    // Als inkoop optie kun je bij kopen als de prijs in een diepte punt zit.
-    // Hiermee haal je de gemiddelde aankoop prijs omlaag en maximaliseer je nog verder.
-    //
-    // De trends (SMA's) werken alleen goed als de periode lang genoeg is. bv 20, 50, 200 bij elke 10 seconden update.
-    //
-    // Wat ik eerder had bedacht werkt ook maar niet goed genoeg.
-    //
+  } //Vanaf hier zijn we uit de LOOP...............  
   
   // Hieronder een veiligheids systeem. Het programma houd de hele markt in de gaten. Dat wil zeggen alle coins.
   // Wanneer de markt inelkaar stort kan de investering terug worden getrokken om verliezen te voorkomen.
@@ -321,14 +300,14 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   })
   //Virtueel handelssysteem om te testen
   //if ( aankoopArray.length > 0 ) ( console.log('Test de aankoopArray ' + aankoopArray[0][0]))
-  if ( aankoopArray.length < 1 && checkDelayTimer > 2 && buildALLCOINS > (smaLongPeriod + 10) ){
+  if ( checkDelayTimer > 2 && buildALLCOINS > (smaLongPeriod + 10) ){
   checkBuy();
   }
   if ( aankoopArray.length > 0 && checkDelayTimer > 2 ){ 
   checkSell();
   }
-  //io.sockets.emit('Status', buildALLCOINS, coinHeroName)
-  //console.log(allCoins[24])
+  // Hoe de berichten array kort tot 20 vergaande berichten
+  if (berichten.length > 20) { berichten.shift() }
   
 })
 
@@ -340,7 +319,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
 function checkBuy() {
   var besteMunt = -10000;
   var besteMuntData = [];
-  if (wholeMarketTrend > -0.2 && buildALLCOINS > smaLongPeriod ) {
+  if (wholeMarketTrend > marktkooppercentage && buildALLCOINS > smaLongPeriod ) {
     //We testen hieronder of het een munt betreft XXX-EUR en niet een munt naar munt
     var patt = new RegExp("-EUR");    
     for (let i = 0; i < allCoins.length; i++) {
@@ -348,23 +327,104 @@ function checkBuy() {
       if ( res === true && allCoins[i][12] > 0 ) { //Als het een XXX-EUR munt is en als er een RSI is.
             if ( allCoins[i][10] > besteMunt ) {
               besteMunt = allCoins[i][10]
+              //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
               besteMuntData = allCoins[i]
             }
       }      
   }
-  console.log('BesteMunt = ' + besteMuntData[0] + ' RSI = ' + besteMuntData[12] + '. RSI low setting = ' + lowRSI)
-  if (aankoopArray.length < 1 && besteMunt > -10000 && besteMuntData[12] < lowRSI && besteMuntData[12] > 0) { 
-    buy(besteMuntData) 
-    console.log(' buy order besteMuntData : ' + besteMuntData)
+  var besteMunt2 = -10000;
+  var besteMuntData2 = [];
+  if (besteMunt > -10000) {
+    //We testen hieronder of het een munt betreft XXX-EUR en niet een munt naar munt
+    var patt = new RegExp("-EUR");    
+    for (let i = 0; i < allCoins.length; i++) {
+      var res = patt.test(allCoins[i][0]);
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0]) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste munt.
+            if ( allCoins[i][10] > besteMunt2 ) {
+              besteMunt2 = allCoins[i][10]
+              //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
+              besteMuntData2 = allCoins[i]
+            }
+      }      
+  }}
+  var besteMunt3 = -10000;
+  var besteMuntData3 = [];
+  if (besteMunt > -10000 && besteMunt2 > -10000) {
+    //We testen hieronder of het een munt betreft XXX-EUR en niet een munt naar munt
+    var patt = new RegExp("-EUR");    
+    for (let i = 0; i < allCoins.length; i++) {
+      var res = patt.test(allCoins[i][0]);
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0]) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 2 munten.
+            if ( allCoins[i][10] > besteMunt3 ) {
+              besteMunt3 = allCoins[i][10]
+              //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
+              besteMuntData3 = allCoins[i]
+            }
+      }      
+  }}
+  var besteMunt4 = -10000;
+  var besteMuntData4 = [];
+  if (besteMunt > -10000 && besteMunt2 > -10000 && besteMunt3 > -10000) {
+    //We testen hieronder of het een munt betreft XXX-EUR en niet een munt naar munt
+    var patt = new RegExp("-EUR");    
+    for (let i = 0; i < allCoins.length; i++) {
+      var res = patt.test(allCoins[i][0]);
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0] && allCoins[i][0] != besteMuntData3[0]) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 3 munten.
+            if ( allCoins[i][10] > besteMunt4 ) {
+              besteMunt4 = allCoins[i][10]
+              //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
+              besteMuntData4 = allCoins[i]
+            }
+      }      
+  }}
+  var besteMunt5 = -10000;
+  var besteMuntData5 = [];
+  if (besteMunt > -10000 && besteMunt2 > -10000 && besteMunt3 > -10000 && besteMunt4 > -10000) {
+    //We testen hieronder of het een munt betreft XXX-EUR en niet een munt naar munt
+    var patt = new RegExp("-EUR");    
+    for (let i = 0; i < allCoins.length; i++) {
+      var res = patt.test(allCoins[i][0]);
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0] && allCoins[i][0] != besteMuntData3[0] && allCoins[i][0] != besteMuntData4[0]) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 4 munten.
+            if ( allCoins[i][10] > besteMunt5 ) {
+              besteMunt5 = allCoins[i][10]
+              //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
+              besteMuntData5 = allCoins[i]
+            }
+      }      
+  }}
+  //console.log('BesteMunt  = ' + besteMuntData[0] + ' RSI = ' + besteMuntData[12] + '. RSI low setting = ' + lowRSI + 'Beste munt score = ' + besteMunt)
+  //console.log('BesteMunt2 = ' + besteMuntData2[0] + ' RSI = ' + besteMuntData2[12] + '. RSI low setting = ' + lowRSI + 'Beste munt score = ' + besteMunt2)
+  //console.log('BesteMunt3 = ' + besteMuntData3[0] + ' RSI = ' + besteMuntData3[12] + '. RSI low setting = ' + lowRSI + 'Beste munt score = ' + besteMunt3)
+  //console.log('BesteMunt4 = ' + besteMuntData4[0] + ' RSI = ' + besteMuntData4[12] + '. RSI low setting = ' + lowRSI + 'Beste munt score = ' + besteMunt4)
+  //console.log('BesteMunt5 = ' + besteMuntData5[0] + ' RSI = ' + besteMuntData5[12] + '. RSI low setting = ' + lowRSI + 'Beste munt score = ' + besteMunt5)
+  if ( besteMuntData[0] != undefined ){
+    io.sockets.emit('CoinTracker',besteMuntData[0],besteMuntData2[0],besteMuntData3[0],besteMuntData4[0],besteMuntData5[0],besteMunt,besteMunt2,besteMunt3,besteMunt4,besteMunt5) 
+  } 
+    
+      if ( aankoopArray.length < 1 && besteMuntData[12] < lowRSI && besteMuntData[12] > 0 && besteMunt > -10000) { 
+        buy(besteMuntData) 
+        console.log(' buy order besteMuntData : ' + besteMuntData)
+      }
+      if ( aankoopArray.length < 1 && besteMuntData2[12] < lowRSI && besteMuntData2[12] > 0 && besteMunt2 > -10000) { 
+        buy(besteMuntData2) 
+        console.log(' buy order besteMuntData : ' + besteMuntData2)
+      }
+      if ( aankoopArray.length < 1 && besteMuntData3[12] < lowRSI && besteMuntData3[12] > 0 && besteMunt3 > -10000) { 
+        buy(besteMuntData3) 
+        console.log(' buy order besteMuntData : ' + besteMuntData3)
+      }
+      if ( aankoopArray.length < 1 && besteMuntData4[12] < lowRSI && besteMuntData4[12] > 0 && besteMunt4 > -10000) { 
+        buy(besteMuntData4) 
+        console.log(' buy order besteMuntData : ' + besteMuntData4)
+      }
+      if ( aankoopArray.length < 1 && besteMuntData5[12] < lowRSI && besteMuntData5[12] > 0 && besteMunt5 > -10000) { 
+        buy(besteMuntData5) 
+        console.log(' buy order besteMuntData : ' + besteMuntData5)
+      }    
   }
       
 }
-//console.log('Wholemarket > 0 = ' + wholeMarketTrend + ' buildALLCOINS > smaLongPeriod = ' + (buildALLCOINS - smaLongPeriod))
-//console.log('allCoins[20][10] = ' + allCoins[20][10] + ' allCoins[20][12] = ' + allCoins[20][12] + ' allCoins[20][1].length = ' + allCoins[20][1].length)
-//console.log('Prijzen in array besteMuntData = ' + besteMuntData[1].length)
-console.log(aankoopArray.length + 'RSI beste munt = ' + besteMuntData[12] + 'Beste munt score = ' + besteMunt)
 
-}
 // Deze tweaken en testen
 //
 // checkSell() moet de aangekochte munt testen op verkoop 'gewicht'. Hierbij kan gedacht worden aan
@@ -395,17 +455,24 @@ function checkSell() {
       var scoreWholeMarket2min = wholeMarketTrend2min * verkoopFactor2 // De sterkte van de korte hele markt trend.
       //var vorigePrijs = allCoins[i][1][allCoins[i][1].length-smaLongPeriod]
       var aankoopPrijs = aankoopArray[0][1]
-      var laatstePrijs = allCoins[i][1][allCoins[i][1].length-1]
-      //var scrorePrijsPercentage = ((laatstePrijs - vorigePrijs) / vorigePrijs) * 100 * verkoopFactor3 // Score op basis van prijs verandering
+      var laatstePrijs = parseFloat(allCoins[i][1][allCoins[i][1].length-1])
+      let targetPrijs = parseFloat(aankoopArray[0][4])
+      var scrorePrijsPercentage = ((laatstePrijs - targetPrijs) / targetPrijs) * 100  // Score op basis van prijs verandering tov verkoop targetprijs
       var scroreAankoopPrijsPercentage = ((laatstePrijs - aankoopPrijs) / aankoopPrijs) * 100 * verkoopFactor3 // Score op basis van prijs verandering
       // We pakken het percentuele verschil tussen aankoop prijs en huidige prijs ( vorigePrijs en laatstePrijs )
       var verkoopScore = scoreLongTrendPercent + scoreWholeMarket2min + scroreAankoopPrijsPercentage
       aankoopArray[0][3] = parseFloat(verkoopScore)
+      if ( scrorePrijsPercentage > L1 ) { aankoopArray[0][4] = laatstePrijs } // Als de munt x% gestegen is zet de targetPrijs op laatste prijs
       //console.log( verkoopScore )
       console.log( 'aankoop naam= ' + aankoopArray[0][0] + '. Verkoop score = ' + verkoopScore + '. RSI = ' + allCoins[i][12] + '. scoreAankoopPrijsPercentage = ' + scroreAankoopPrijsPercentage)
+      console.log( 'Prijs stijging = ' + scrorePrijsPercentage + ' %.')
+      //console.log(laatstePrijs + '-' + targetPrijs + '/' + targetPrijs + ' = ' + scrorePrijsPercentage )
+      //console.log(aankoopArray)
       //We verkopen als de markt crashed...
-      if ( aankoopArray.length > 0 && (scoreWholeMarket2min/verkoopFactor2) < -5 ) { 
+      if ( aankoopArray.length > 0 && (scoreWholeMarket2min/verkoopFactor2) < L2 ) { 
         io.sockets.emit('Sell', 'The market crashed, Trying to save your EUROS', (scoreWholeMarket2min/verkoopFactor2))
+        var d = new Date()
+        berichten.push([d.toLocaleString() + 'The market crashed, Trying to save your EUROS' + (scoreWholeMarket2min/verkoopFactor2)])
         sell(aankoopArray[0],allCoins[i])
          
       }
@@ -413,26 +480,32 @@ function checkSell() {
       //Hier kunnen we een MOVING target van maken. BV.. Als de prijs nog stijgt stellen we de winst % hoger bij.
       //  Dan blijft de munt langer door stijgen en word deze niet vroegtijdig verkocht.
       //Hier kan ook nog een check op komen of er toevallig niet een veel beter munt is om in te investeren..
-      if ( aankoopArray.length > 0 && (scroreAankoopPrijsPercentage/verkoopFactor3) > 2 && (scoreLongTrendPercent/verkoopFactor1) <= 0 && allCoins[i][12] > 50 && allCoins[i][12] < 100) {
-        io.sockets.emit('Sell', 'Sold due to making good revenue but long trend is diving.', (scoreLongTrendPercent/verkoopFactor1))  
-        sell(aankoopArray[0],allCoins[i])
-        
-      }
-      //We verkopen als de totale verkoopscore erg laag is
+      //if ( aankoopArray.length > 0 && (scroreAankoopPrijsPercentage/verkoopFactor3) > 2 && (scoreLongTrendPercent/verkoopFactor1) <= 0 && allCoins[i][12] > 50 && allCoins[i][12] < 100) {
+      //  io.sockets.emit('Sell', 'Sold due to making good revenue but long trend is diving.', (scoreLongTrendPercent/verkoopFactor1))
+      //  var d = new Date()
+      //  berichten.push([d.toLocaleString() + 'Sold due to making good revenue but long trend is diving.' + (scoreLongTrendPercent/verkoopFactor1)])  
+      //  sell(aankoopArray[0],allCoins[i])
+      //  
+      //}
+      //We verkopen als de prijs > x% zakt onder de target prijs (Die meeloopt als de munt stijgt) erg laag is en het lang gemiddelde zakt
       //VANAF HIER VERDER WERKEN MET DE SETTINGS INTERFACE FRONT END
-      if ( aankoopArray.length > 0 && aankoopArray[0][3] < 0 && allCoins[i][12] > 50 && allCoins[i][12] < 100) {
-        io.sockets.emit('Sell', 'The coin was too weak. Sold it.', aankoopArray[0][3]) 
+      if ( aankoopArray.length > 0 && scrorePrijsPercentage < L3 && allCoins[i][12] > 50 && allCoins[i][12] < 100 && allCoins[i][8] < 0 ) {
+        io.sockets.emit('Sell', 'The coin hit the lower % mark. Sold it.', scrorePrijsPercentage)
+        var d = new Date()
+        berichten.push([d.toLocaleString() + 'The coin hit the lower % mark. Sold it.' + scrorePrijsPercentage]) 
         sell(aankoopArray[0],allCoins[i])
          
       }
       //We verkopen als het een totale mislukking is
       //Te ver zakt en de trend omlaag is
       //----- EXPERIMENTEEL ----
-      if ( aankoopArray.length > 0 && (scroreAankoopPrijsPercentage/verkoopFactor3) < -2 && (scoreLongTrendPercent/verkoopFactor1) < 0 && allCoins[i][12] > 50 && allCoins[i][12] < 100) {
-        io.sockets.emit('Sell', 'The coin was a failure. Sold it.', (scoreLongTrendPercent/verkoopFactor1)) 
-        sell(aankoopArray[0],allCoins[i])
-         
-      }
+      //if ( aankoopArray.length > 0 && (scroreAankoopPrijsPercentage/verkoopFactor3) < -2 && (scoreLongTrendPercent/verkoopFactor1) < 0 && allCoins[i][12] > 50 && allCoins[i][12] < 100) {
+      //  io.sockets.emit('Sell', 'The coin was a failure. Sold it.', (scoreLongTrendPercent/verkoopFactor1))
+      //  var d = new Date()
+      //  berichten.push([d.toLocaleString() + 'The coin was a failure. Sold it.' + (scoreLongTrendPercent/verkoopFactor1)]) 
+      //  sell(aankoopArray[0],allCoins[i])
+      //   
+      //}
     }
   }
 }
@@ -447,12 +520,14 @@ function buy(coindata) {
   geldEUR = geldEUR / feeFactor  
   var aankoophoeveelheid = geldEUR / price
   geldEUR = geldEUR - (aankoophoeveelheid * price)
-  aankoopArray.push([name,price,parseFloat(aankoophoeveelheid),'verkoopScore'])
+  aankoopArray.push([name,price,parseFloat(aankoophoeveelheid),'verkoopScore',price])
   console.log('Ingekocht munt ' + name + ' hoeveelheid = ' + aankoophoeveelheid + ' voor prijs: ' + price +'. En SCORE = ' + coindata[10] + '. En RSI = ' + coindata[12] )
   console.log('Saldo Euro = ' + geldEUR)
   console.log(aankoopArray)
   checkDelayTimer = 0;
   io.sockets.emit('Buy', 'I Bought ' + aankoopArray[0][0] + ' on price ' + aankoopArray[0][1].toFixed(3) + ' in amounts of ' + aankoopArray[0][2].toFixed(3))
+  var d = new Date()
+  berichten.push([d.toLocaleString() + ' I Bought ' + aankoopArray[0][0] + ' on price ' + aankoopArray[0][1].toFixed(3) + ' in amounts of ' + aankoopArray[0][2].toFixed(3)])
 }
 catch(err) {
   console.log(err.message);
@@ -476,7 +551,7 @@ function sell(aankoopdata,verkoopdata) {
 
 io.on('connection', socket => {
   
-    socket.emit('user-connected')
+    socket.emit('user-connected', berichten)
 
     socket.on('disconnect', () => {
         socket.emit('user-disconnected')
@@ -489,15 +564,18 @@ io.on('connection', socket => {
               sell(aankoopArray[0],allCoins[i])
               //Ik gebruik de Buy versie omdat ik dan alleen text kan verzenden.
               io.sockets.emit('Buy', 'Coin Sold because You pressed the SELL BUTTON.')
+              var d = new Date()
+              berichten.push([d.toLocaleString() + 'Coin Sold because You pressed the SELL BUTTON.'])
+              
             }
           }
         }
     
     })
     socket.on('settings', () => {
-      socket.emit('serverSettings', smaShortPeriod, smaMediumPeriod, smaLongPeriod, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, verkoopFactor1, verkoopFactor2, verkoopFactor3)
+      socket.emit('serverSettings', smaShortPeriod, smaMediumPeriod, smaLongPeriod, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, verkoopFactor1, verkoopFactor2, verkoopFactor3, marktkooppercentage, L1, L2, L3)
   })
-  socket.on('newSettings', (SsmaShort, SsmaMedium, SsmaLong, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, SverkoopFactor1, SverkoopFactor2, SverkoopFactor3) => {
+  socket.on('newSettings', (SsmaShort, SsmaMedium, SsmaLong, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, SverkoopFactor1, SverkoopFactor2, SverkoopFactor3, Smarktkooppercentage, SL1, SL2, SL3) => {
     smaShortPeriod = parseFloat(SsmaShort);
     smaMediumPeriod = parseFloat(SsmaMedium);
     smaLongPeriod = parseFloat(SsmaLong); 
@@ -509,6 +587,10 @@ io.on('connection', socket => {
     verkoopFactor1 = parseFloat(SverkoopFactor1) // factor scoreLongTrendPercent
     verkoopFactor2 = parseFloat(SverkoopFactor2) // factor scoreWholeMarket2min
     verkoopFactor3 = parseFloat(SverkoopFactor3) // factor scoreAankoopPrijsPercentage
+    marktkooppercentage = parseFloat(Smarktkooppercentage)
+    L1 = parseFloat(SL1)
+    L2 = parseFloat(SL2)
+    L3 = parseFloat(SL3)
     console.log('Recieved new settings from user front end new smaShortPeriod = ' + smaShortPeriod)
 })     
 })
