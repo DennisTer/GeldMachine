@@ -42,6 +42,18 @@ var myChart = new Chart(ctx, {
             borderColor: 'red',
             lineTension: 0.5             
         },
+        {
+            label: 'Upper price limit (set higher goals)',
+            data: [1.7],
+            backgroundColor: 'orange',
+            borderColor: 'orange'             
+        },
+        {
+            label: 'Lower price limit (Sell the coin)',
+            data: [1.5],
+            backgroundColor: 'purple',
+            borderColor: 'purple'            
+        },
     ],
       
     },
@@ -91,9 +103,11 @@ let Smarktkooppercentage // percentage waar boven er gekocht mag worden
 let SL1
 let SL2
 let SL3
+let StargetPrice
 
 socket.on('user-connected', function(berichten) {
     console.log('We Have a COnneectionnnnn!!!!')
+    socket.emit('settings')
     if (berichten.length > 0) {
     for (let i = 0; i < berichten.length; i++) {
         var consoleDiv = document.getElementById('consoleDiv')
@@ -126,7 +140,7 @@ socket.on('BuyStatus', function(aankoopArray, digiEUR, pricess , sSMA, mSMA, lSM
     //console.log(sSMA)
     let sSMAfloats = []
     let mSMAfloats = []
-    let lSMAfloats = []
+    let lSMAfloats = []    
 
     let labels = []
     for (let i = 0; i < lab.length; i++) {
@@ -150,6 +164,16 @@ socket.on('BuyStatus', function(aankoopArray, digiEUR, pricess , sSMA, mSMA, lSM
     myChart.data.datasets[1].data = sSMAfloats;
     myChart.data.datasets[2].data = mSMAfloats;
     myChart.data.datasets[3].data = lSMAfloats;
+    let UPL = StargetPrice + (StargetPrice * (SL1/100))
+    let LPL = StargetPrice + (StargetPrice * (SL3/100))
+    let UPLarr = []
+    let LPLarr = []
+    for (let i = 0; i < lab.length; i++) {
+        UPLarr.push(UPL)
+        LPLarr.push(LPL)
+    }
+    myChart.data.datasets[4].data = UPLarr; // Upper price limit
+    myChart.data.datasets[5].data = LPLarr; // Lower price limit (Sell)
     myChart.update();
     //play()
     //console.log( pricess.length + ' ' + sSMAfloats.length + ' ' + mSMAfloats.length + ' ' + lSMAfloats.length )
@@ -200,6 +224,10 @@ socket.on('Buy', function(text) {
     consoleDiv.appendChild(a);
 });
 
+socket.on('limits', function(targetprice) {
+    StargetPrice = parseFloat(targetprice)
+});
+
 socket.on('CoinTracker', function(besteMuntData,besteMuntData2,besteMuntData3,besteMuntData4,besteMuntData5,besteMunt,besteMunt2,besteMunt3,besteMunt4,besteMunt5) {
     
     var ctp = document.getElementById('besteMunt')
@@ -243,9 +271,9 @@ socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTre
         document.getElementById("verkoopScore2").value = SverkoopFactor2;
         document.getElementById("verkoopScore3").value = SverkoopFactor3;
         document.getElementById("marktkooppercentage").value = Smarktkooppercentage;
-        document.getElementById("L1").value = SL1
-        document.getElementById("L2").value = SL2
-        document.getElementById("L3").value = SL3
+        document.getElementById("L1").value = SL1;
+        document.getElementById("L2").value = SL2;
+        document.getElementById("L3").value = SL3;
     });
     
     //console.log(SsmaShortPeriod + '  ' + SsmaMediumPeriod + '  ' + SsmaLongPeriod)
@@ -257,6 +285,7 @@ function play() {
 
   function sellCoin() {
       socket.emit('sellCoin')
+      alert('Munt Verkocht!!!!')
   }
 
   /* Set the width of the side navigation to 250px and the left margin of the page content to 250px */
@@ -301,6 +330,6 @@ function openNav() {
     SL1 = document.getElementById("L1").value;
     SL2 = document.getElementById("L2").value;
     SL3 = document.getElementById("L3").value;
-    socket.emit('newSettings', SsmaShortPeriod, SsmaMediumPeriod, SsmaLongPeriod, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, SverkoopFactor1, SverkoopFactor2, SverkoopFactor3, Smarktkooppercentage)
+    socket.emit('newSettings', SsmaShortPeriod, SsmaMediumPeriod, SsmaLongPeriod, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, SverkoopFactor1, SverkoopFactor2, SverkoopFactor3, Smarktkooppercentage, SL1, SL2, SL3)
     console.log('New Settings Send to server')
   }

@@ -183,7 +183,13 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     var stijging = ((allCoins[i][3]-allCoins[i][5])/allCoins[i][5]) * 100; // Stijging tov longSMA
     var stijgingmedium = ((allCoins[i][4]-allCoins[i][5])/allCoins[i][5]) * 100; // Stijging tov longSMA
     //wholeMarketTrend = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[0])/smaMarketSum[smaMarketSum.length-1] * 100); // percentage trend
-    var stijgingLong = ((parseFloat(avgLong[avgLong.length-1]) - parseFloat(avgLong[0])) / parseFloat(avgLong[0])) * 100; // Stijging van Long SMA in %
+    if ( avgLong.length > 151 ) {
+    var stijgingLong = ((parseFloat(avgLong[avgLong.length-1]) - parseFloat(avgLong[avgLong.length-150])) / parseFloat(avgLong[avgLong.length-150])) * 100; // Stijging van Long SMA in %
+    } else {
+      var stijgingLong = ((parseFloat(avgLong[avgLong.length-1]) - parseFloat(avgLong[avgLong.length-2])) / parseFloat(avgLong[avgLong.length-2])) * 100; // Stijging van Long SMA in %  
+     }
+    
+    
     if ( stijging != NaN) { allCoins[i][6] = parseFloat(stijging.toFixed(4)) } // Stop de stijging shorttov long in allCoins
     if ( stijgingmedium != NaN) { allCoins[i][7] = parseFloat(stijgingmedium.toFixed(4)) }// Stop de stijging medium tov long in allCoins
     if ( stijgingLong != undefined) { allCoins[i][8] = parseFloat(stijgingLong.toFixed(4)) }// Stop de stijging van long tov longtrend in allCoins
@@ -324,7 +330,7 @@ function checkBuy() {
     var patt = new RegExp("-EUR");    
     for (let i = 0; i < allCoins.length; i++) {
       var res = patt.test(allCoins[i][0]);
-      if ( res === true && allCoins[i][12] > 0 ) { //Als het een XXX-EUR munt is en als er een RSI is.
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][10] > 0) { //Als het een XXX-EUR munt is en als er een RSI is EN een positieve score heeft.
             if ( allCoins[i][10] > besteMunt ) {
               besteMunt = allCoins[i][10]
               //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
@@ -455,7 +461,7 @@ function checkSell() {
       var scoreWholeMarket2min = wholeMarketTrend2min * verkoopFactor2 // De sterkte van de korte hele markt trend.
       //var vorigePrijs = allCoins[i][1][allCoins[i][1].length-smaLongPeriod]
       var aankoopPrijs = aankoopArray[0][1]
-      var laatstePrijs = parseFloat(allCoins[i][1][allCoins[i][1].length-1])
+      var laatstePrijs = parseFloat(allCoins[i][3]) //parseFloat(allCoins[i][1][allCoins[i][1].length-1])
       let targetPrijs = parseFloat(aankoopArray[0][4])
       var scrorePrijsPercentage = ((laatstePrijs - targetPrijs) / targetPrijs) * 100  // Score op basis van prijs verandering tov verkoop targetprijs
       var scroreAankoopPrijsPercentage = ((laatstePrijs - aankoopPrijs) / aankoopPrijs) * 100 * verkoopFactor3 // Score op basis van prijs verandering
@@ -465,7 +471,7 @@ function checkSell() {
       if ( scrorePrijsPercentage > L1 ) { aankoopArray[0][4] = laatstePrijs } // Als de munt x% gestegen is zet de targetPrijs op laatste prijs
       //console.log( verkoopScore )
       console.log( 'aankoop naam= ' + aankoopArray[0][0] + '. Verkoop score = ' + verkoopScore + '. RSI = ' + allCoins[i][12] + '. scoreAankoopPrijsPercentage = ' + scroreAankoopPrijsPercentage)
-      console.log( 'Prijs stijging = ' + scrorePrijsPercentage + ' %.')
+      console.log( 'Prijs stijging = ' + scrorePrijsPercentage + ' %. Stijging long trend = ' + allCoins[i][8])
       //console.log(laatstePrijs + '-' + targetPrijs + '/' + targetPrijs + ' = ' + scrorePrijsPercentage )
       //console.log(aankoopArray)
       //We verkopen als de markt crashed...
@@ -489,13 +495,15 @@ function checkSell() {
       //}
       //We verkopen als de prijs > x% zakt onder de target prijs (Die meeloopt als de munt stijgt) erg laag is en het lang gemiddelde zakt
       //VANAF HIER VERDER WERKEN MET DE SETTINGS INTERFACE FRONT END
-      if ( aankoopArray.length > 0 && scrorePrijsPercentage < L3 && allCoins[i][12] > 50 && allCoins[i][12] < 100 && allCoins[i][8] < 0 ) {
+      //Test met shortAVG ipv prijs.. De prijs springt soms te ver op en neer waardoor deze de trigger afzet.
+      if ( aankoopArray.length > 0 && scrorePrijsPercentage < L3  ) { // && allCoins[i][8] < 0 <---Bugje
         io.sockets.emit('Sell', 'The coin hit the lower % mark. Sold it.', scrorePrijsPercentage)
         var d = new Date()
         berichten.push([d.toLocaleString() + 'The coin hit the lower % mark. Sold it.' + scrorePrijsPercentage]) 
         sell(aankoopArray[0],allCoins[i])
          
       }
+      io.sockets.emit('limits', targetPrijs )
       //We verkopen als het een totale mislukking is
       //Te ver zakt en de trend omlaag is
       //----- EXPERIMENTEEL ----
@@ -509,6 +517,7 @@ function checkSell() {
     }
   }
 }
+
 }
 
 function buy(coindata) {
