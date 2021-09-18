@@ -19,40 +19,52 @@ var myChart = new Chart(ctx, {
             data: prices,
             backgroundColor: 'black',
             borderColor: 'black',
-            lineTension: 0.5           
+            lineTension: 0.5,
+            pointRadius: 1,
+            borderWidth: 2           
         },
         {
             label: 'Short SMA',
             data: shortSMA,
             backgroundColor: 'green',
             borderColor: 'green',
-            lineTension: 0.5               
+            lineTension: 0.5,
+            pointRadius: 1,
+            borderWidth: 2               
         },
         {
             label: 'Medium SMA',
             data: mediumSMA,
             backgroundColor: 'blue',
             borderColor: 'blue',
-            lineTension: 0.5              
+            lineTension: 0.5,
+            pointRadius: 1,
+            borderWidth: 2              
         },
         {
             label: 'Long SMA',
             data: longSMA,
             backgroundColor: 'red',
             borderColor: 'red',
-            lineTension: 0.5             
+            lineTension: 0.5,
+            pointRadius: 1,
+            borderWidth: 2             
         },
         {
             label: 'Upper price limit (set higher goals)',
             data: [1.7],
             backgroundColor: 'orange',
-            borderColor: 'orange'             
+            borderColor: 'orange',
+            pointRadius: 1,
+            borderWidth: 2             
         },
         {
             label: 'Lower price limit (Sell the coin)',
             data: [1.5],
             backgroundColor: 'purple',
-            borderColor: 'purple'            
+            borderColor: 'purple',
+            pointRadius: 1,
+            borderWidth: 2            
         },
     ],
       
@@ -96,9 +108,9 @@ let Sscore1hrsTrendFactor;
 let SscoreLongTrendFactor;
 let SscoreWholeMarketFactor;
 let SlowRSI;
-let SverkoopFactor1// factor scoreLongTrendPercent
-let SverkoopFactor2// factor scoreWholeMarket2min
-let SverkoopFactor3// factor scoreAankoopPrijsPercentage
+//let SverkoopFactor1// factor scoreLongTrendPercent
+//let SverkoopFactor2// factor scoreWholeMarket2min
+//let SverkoopFactor3// factor scoreAankoopPrijsPercentage
 let Smarktkooppercentage // percentage waar boven er gekocht mag worden
 let SL1
 let SL2
@@ -251,9 +263,9 @@ socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTre
     SscoreLongTrendFactor = scoreLongTrendFactor
     SscoreWholeMarketFactor = scoreWholeMarketFactor
     SlowRSI = lowRSI
-    SverkoopFactor1 = verkoopFactor1 // factor scoreLongTrendPercent
-    SverkoopFactor2 = verkoopFactor2 // factor scoreWholeMarket2min
-    SverkoopFactor3 = verkoopFactor3 // factor scoreAankoopPrijsPercentage
+    //SverkoopFactor1 = verkoopFactor1 // factor scoreLongTrendPercent
+    //SverkoopFactor2 = verkoopFactor2 // factor scoreWholeMarket2min
+    //SverkoopFactor3 = verkoopFactor3 // factor scoreAankoopPrijsPercentage
     Smarktkooppercentage = marktkooppercentage
     SL1 = L1
     SL2 = L2
@@ -267,9 +279,9 @@ socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTre
         document.getElementById("aankoop3").value = SscoreLongTrendFactor;
         document.getElementById("aankoop4").value = SscoreWholeMarketFactor;
         document.getElementById("RSIaankoop").value = SlowRSI;
-        document.getElementById("verkoopScore1").value = SverkoopFactor1;
-        document.getElementById("verkoopScore2").value = SverkoopFactor2;
-        document.getElementById("verkoopScore3").value = SverkoopFactor3;
+        //document.getElementById("verkoopScore1").value = SverkoopFactor1;
+        //document.getElementById("verkoopScore2").value = SverkoopFactor2;
+        //document.getElementById("verkoopScore3").value = SverkoopFactor3;
         document.getElementById("marktkooppercentage").value = Smarktkooppercentage;
         document.getElementById("L1").value = SL1;
         document.getElementById("L2").value = SL2;
@@ -323,9 +335,9 @@ function openNav() {
     SscoreLongTrendFactor = document.getElementById("aankoop3").value;
     SscoreWholeMarketFactor = document.getElementById("aankoop4").value;
     SlowRSI = document.getElementById("RSIaankoop").value;
-    SverkoopFactor1 = document.getElementById("verkoopScore1").value;
-    SverkoopFactor2 = document.getElementById("verkoopScore2").value;
-    SverkoopFactor3 = document.getElementById("verkoopScore3").value;
+    //SverkoopFactor1 = document.getElementById("verkoopScore1").value;
+    //SverkoopFactor2 = document.getElementById("verkoopScore2").value;
+    //SverkoopFactor3 = document.getElementById("verkoopScore3").value;
     Smarktkooppercentage = document.getElementById("marktkooppercentage").value;
     SL1 = document.getElementById("L1").value;
     SL2 = document.getElementById("L2").value;

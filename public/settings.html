@@ -52,7 +52,7 @@
 </p>
 <form action="javascript:sendSettings()">
     <label for="RSIaankoop">Lage RSI setting (minder als 50):</label>
-    <input type="number" id="RSIaankoop" name="RSIaankoop" min="1" max="50">
+    <input type="number" id="RSIaankoop" name="RSIaankoop" min="1" max="50" step="0.5">
     <p>De RSI setting waaronder de Geld Machine de beste munt gaat inkopen</p>
   </form>
   <p></p>
@@ -61,47 +61,31 @@
   <p>Minimaal -5% en maximaal 5%</p>
   <form action="javascript:sendSettings()">
     <label for="marktkooppercentage">Hele markt inkoop grens:</label>
-    <input type="number" id="marktkooppercentage" name="marktkooppercentage" min="-5" max="+5">
+    <input type="number" id="marktkooppercentage" name="marktkooppercentage" min="-5" max="+5" step="0.1">
     <p></p>    
   </form>
-<h4>Verkoop scores</h4>
-<p>Er zijn 3 verkoop scores waarmee de Geld Machine bepaald of een munt verkocht gaat worden.
-    1- De score van de longtrend... Als deze goed stijgt heeft het weinig zin om te verkopen. Maar als deze daalt dan kun je over verkoop nadenken.
-    2- Score van de hele markt van de afgelopen 2 minuten. Dit is een veiligheids score. Als de markt in elkaar stort dan wil je graag van je coins af om je euros veilig te stellen.
-    3- Score aankoop prijs versus huidige prijs in procenten (Winst). Als je een bepaalde winst hebt behaald dan zou je kunnen verkopen.
-    Dit zijn wederom factoren.. Dus je kunt hieronder het gewicht bepalen van de 3 verkoop triggers.
+<h4>Verkoop instellingen</h4>
+<p>De prijs beweegt op en neer tussen twee limieten die je in kunt stellen. Raakt de prijs de boven limiet dan word
+  de band waartussen de prijd beweegt omhoog 'gelift'. Zodoende kan een goede munt blijven stijgen. Het is raadzaam de 
+  boven limiet heel laag te houden (bv 1%) en de onderste limiet wat ruimer (bv 3%). De prijs moet immers genoeg ruimte hebben
+  om te kunnen stijgen en dalen zonder onbedoelde verkoop. De verkoop gebeurd wanneer het korte SMA gemiddelde onder de onder limiet zakt.
 </p>
-<form action="javascript:sendSettings()">
-    <label for="verkoopScore1">Lange trend score factor:</label>
-    <input type="number" id="verkoopScore1" name="verkoopScore1" min="1" max="100">
-    <p></p>
-  </form>
-  <form action="javascript:sendSettings()">
-    <label for="verkoopScore2">Trend hele markt score factor:</label>
-    <input type="number" id="verkoopScore2" name="verkoopScore2" min="1" max="100">
-    <p></p>
-  </form>
-  <form action="javascript:sendSettings()">
-    <label for="verkoopScore3">Winst score factor:</label>
-    <input type="number" id="verkoopScore3" name="verkoopScore3" min="1" max="100">
-    <p></p>
-  </form>
   <p>Bij deze prijsstijging in % gaat de verkoop trigger mee omhoog liften</p>
   <form action="javascript:sendSettings()">
     <label for="L1">Limiet prijs stijging % lift:</label>
-    <input type="number" id="L1" name="L1" min="1" max="10">
+    <input type="number" id="L1" name="L1" min="0" max="10" step="0.1">
     <p></p>
   </form>
   <p>Bij deze markt trend % word het hele zooitje verkocht (markt crash veiligheids systeem)</p>
   <form action="javascript:sendSettings()">
     <label for="L2">Hele markt trend % daling:</label>
-    <input type="number" id="L2" name="L2" min="-50" max="-1">
+    <input type="number" id="L2" name="L2" min="-50" max="0" step="0.1">
     <p></p>
   </form>
   <p>Als de prijs x % is gezakt verkoop dan de munt</p>
   <form action="javascript:sendSettings()">
     <label for="L3">Prijs % zakking:</label>
-    <input type="number" id="L3" name="L3" min="-50" max="-1">
+    <input type="number" id="L3" name="L3" min="-50" max="0" step="0.1">
     <input type="submit">
     <p></p>
   </form>

@@ -1,19 +1,9 @@
 // TO DO & BUGS
-// ----> Scoring/Gewichten tunen. Misschien X ipv + <--- Gaat nu via Front End
-// ----> Verkoop systeem maken. Met escape als de markt crashed. <--- Draait al. Dubbele escape maken op de hele markt trend
-// ----> Bij aankoop inkopen als de munt laag onder de trend hangt (dus daarop wachten) <--- AF en werkt met RSI
-// ----> Bij verkoop verkopen als de munt hoog boven de trend zit (dus daarop wachten mits dat kan) <--- AF en werkt met RSI.. Werkt slecht dus gewoon verkopen als RSI > 50
-// ----> Tunen van de scoring gewichten voor elke munt en iedere trigger <--- Hier ook nog even over nadenken. Werkt aardig maar kan beter. Misschien in trapjes ipv 1 grote score.
-// ----> Als de prijs zakt gaat de verkoop score omhoog... Dat kan maar dan moeten de verkoop condities ook zo zijn gebouwd...... <--- GEFIXED
-// ----> Front end Settings interface verder uitbouwen... Nu bij verkoop aanbeland.
-// ----> Als je de settings veranderd koopt ie geen munt meer na verkoop oude munt....  :( :( ----> GEFIXED
-// ----> Even een setje best munten maken om uit te kiezen.. BV 5 stuks. Dan gaat de aankoop wat sneller vanwege RSI. <--- AF
-// ---->   In allCoins komt een RATING te staan om deze set goede munten te vinden... <--- Werkte niet. Alternatief ingebouwd
+
+// Zie GITHUB issues... https://github.com/DennisTer/GeldMachine/issues/
 
 // FORMULE VERSCHIL IN PROCENTEN -----> ((Nieuw - oud) / oud) * 100 .... Niet weer vergeten gloeiende gloeiende!!!!
-// Een 'Cache' maken voor server berichten die bij connectie verstuurd worden van de laatste 20 berichten ofzo.... <--- AF
-//    Nu bij verversen pagina zie je de geschiedenis niet <---- AF
-// Server Berichten onder elkaar plaatsen..... <--- AF hopelijk
+
 // Server STATUS maken zodat je kan zien wat er gaande is... 
 
 // Als er een munt gekocht is toch door scannen blijven op betere..... Kan handig zijn!
@@ -55,17 +45,17 @@ let allCoins = []; //Multi dimensional array of all coins and prices and trends.
 let buildALLCOINS = 0;
 let coinHeroName;
 let loopinterval = 5; //Loop interval in seconden
-let score24hrsTrendFactor = 1
-let score1hrsTrendFactor = 40
-let scoreLongTrendFactor = 80
-let scoreWholeMarketFactor = 2
+let score24hrsTrendFactor = 10
+let score1hrsTrendFactor = 50
+let scoreLongTrendFactor = 50
+let scoreWholeMarketFactor = 10
 let lowRSI = 47;
 let verkoopFactor1 = 50 // factor scoreLongTrendPercent
 let verkoopFactor2 = 10 // factor scoreWholeMarket2min
 let verkoopFactor3 = 40 // factor scoreAankoopPrijsPercentage
 let marktkooppercentage = -0.2 // Percentage markt trend waar boven er gekocht mag worden
-let L1 = 2 // Percentage waarboven de prijs meelift in CheckSell
-let L2 = -5 // Percentage van de totale markt trend. Bij markt crash verkopen we alles.....
+let L1 = 1 // Percentage waarboven de prijs meelift in CheckSell
+let L2 = -0.5 // Percentage van de totale markt trend. Bij markt crash verkopen we alles.....
 let L3 = -3 // Percentage waarbij verkocht word als de prijs is gezakt...
 
 //Virtuele coin om te testen...
@@ -183,8 +173,8 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     var stijging = ((allCoins[i][3]-allCoins[i][5])/allCoins[i][5]) * 100; // Stijging tov longSMA
     var stijgingmedium = ((allCoins[i][4]-allCoins[i][5])/allCoins[i][5]) * 100; // Stijging tov longSMA
     //wholeMarketTrend = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[0])/smaMarketSum[smaMarketSum.length-1] * 100); // percentage trend
-    if ( avgLong.length > 151 ) {
-    var stijgingLong = ((parseFloat(avgLong[avgLong.length-1]) - parseFloat(avgLong[avgLong.length-150])) / parseFloat(avgLong[avgLong.length-150])) * 100; // Stijging van Long SMA in %
+    if ( avgLong.length > 51 ) {
+    var stijgingLong = ((parseFloat(avgLong[avgLong.length-1]) - parseFloat(avgLong[avgLong.length-25])) / parseFloat(avgLong[avgLong.length-25])) * 100; // Stijging van Long SMA in %
     } else {
       var stijgingLong = ((parseFloat(avgLong[avgLong.length-1]) - parseFloat(avgLong[avgLong.length-2])) / parseFloat(avgLong[avgLong.length-2])) * 100; // Stijging van Long SMA in %  
      }
@@ -194,17 +184,25 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
     if ( stijgingmedium != NaN) { allCoins[i][7] = parseFloat(stijgingmedium.toFixed(4)) }// Stop de stijging medium tov long in allCoins
     if ( stijgingLong != undefined) { allCoins[i][8] = parseFloat(stijgingLong.toFixed(4)) }// Stop de stijging van long tov longtrend in allCoins
     //Hieronder stoppen we de 1 uurs trend percentage in de allCoins array die ook meedoet in de scoring
-    if ( allCoins[i][1].length * loopinterval < 3600) {
-      var hr_oud = allCoins[i][1][0]
+    var datenow = new Date()
+    //var date6HrBack = datenow - (6*60*60*1000); // date in ms 6 uur terug
+    var date1HrBack = datenow - (1*60*60*1000); // date in ms 1 uur terug
+    //var date30minBack = datenow - (0.5*60*60*1000); // date in ms half uur terug
+    //var date10minBack = datenow - (0.17*60*60*1000); // date in ms 10 min terug
+
+    // Hieronder zoeken we de timestamp in ms die het dichts bij 1 uur terug ligt
+    // Uiteraard zal de Geldmachine een uur moeten draaien voordat deze waarde ook daadwerkelijk 1 uur terug is
+    var indexArr = allCoins[i][2].map(function(k) { return Math.abs(k - date1HrBack) })
+    var min = Math.min.apply(Math, indexArr)
+    var indexof1HrBack = indexArr.indexOf(min)
+    
+    // Deze 1Hr terug trend in % zou uitgebreid kunnen worden met een 30 min trend % en een 15 min trend %
+    // Zo zou je munten kunnen vinden die vanuit een diep dal ineens gaan stijgen...    
+      var hr_oud = allCoins[i][1][indexof1HrBack]
       var hr_nieuw = allCoins[i][1][allCoins[i][1].length-1]
       var hr_percentage = ((hr_nieuw - hr_oud) / hr_oud) * 100
       allCoins[i][11] = parseFloat(hr_percentage)
-    } else {
-      var hr_oud = allCoins[i][1][3600 / loopinterval]
-      var hr_nieuw = allCoins[i][1][allCoins[i][1].length-1]
-      var hr_percentage = ((hr_nieuw - hr_oud) / hr_oud) * 100
-      allCoins[i][11] = parseFloat(hr_percentage)
-    }
+    
     // Array ticker24hr = [market,open,high,low,last]
     for (let d = 0; d < ticker24hr.length; d++) {
       if ( ticker24hr[d][0] === allCoins[i][0] ){
@@ -306,6 +304,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   })
   //Virtueel handelssysteem om te testen
   //if ( aankoopArray.length > 0 ) ( console.log('Test de aankoopArray ' + aankoopArray[0][0]))
+  // De checkDelayTimer kan van pas komen om een pauze tussen verkoop en aankoop in te lassen. Staat nu op 2 seconden
   if ( checkDelayTimer > 2 && buildALLCOINS > (smaLongPeriod + 10) ){
   checkBuy();
   }
@@ -331,7 +330,7 @@ function checkBuy() {
     for (let i = 0; i < allCoins.length; i++) {
       var res = patt.test(allCoins[i][0]);
       if ( res === true && allCoins[i][12] > 0 && allCoins[i][10] > 0) { //Als het een XXX-EUR munt is en als er een RSI is EN een positieve score heeft.
-            if ( allCoins[i][10] > besteMunt ) {
+            if ( allCoins[i][10] > besteMunt && allCoins[i][10] > 0 ) {
               besteMunt = allCoins[i][10]
               //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
               besteMuntData = allCoins[i]
@@ -345,7 +344,7 @@ function checkBuy() {
     var patt = new RegExp("-EUR");    
     for (let i = 0; i < allCoins.length; i++) {
       var res = patt.test(allCoins[i][0]);
-      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0]) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste munt.
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][10] > 0 ) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste munt.
             if ( allCoins[i][10] > besteMunt2 ) {
               besteMunt2 = allCoins[i][10]
               //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
@@ -360,7 +359,7 @@ function checkBuy() {
     var patt = new RegExp("-EUR");    
     for (let i = 0; i < allCoins.length; i++) {
       var res = patt.test(allCoins[i][0]);
-      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0]) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 2 munten.
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0] && allCoins[i][10] > 0 ) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 2 munten.
             if ( allCoins[i][10] > besteMunt3 ) {
               besteMunt3 = allCoins[i][10]
               //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
@@ -375,7 +374,7 @@ function checkBuy() {
     var patt = new RegExp("-EUR");    
     for (let i = 0; i < allCoins.length; i++) {
       var res = patt.test(allCoins[i][0]);
-      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0] && allCoins[i][0] != besteMuntData3[0]) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 3 munten.
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0] && allCoins[i][0] != besteMuntData3[0] && allCoins[i][10] > 0 ) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 3 munten.
             if ( allCoins[i][10] > besteMunt4 ) {
               besteMunt4 = allCoins[i][10]
               //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
@@ -390,7 +389,7 @@ function checkBuy() {
     var patt = new RegExp("-EUR");    
     for (let i = 0; i < allCoins.length; i++) {
       var res = patt.test(allCoins[i][0]);
-      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0] && allCoins[i][0] != besteMuntData3[0] && allCoins[i][0] != besteMuntData4[0]) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 4 munten.
+      if ( res === true && allCoins[i][12] > 0 && allCoins[i][0] != besteMuntData[0] && allCoins[i][0] != besteMuntData2[0] && allCoins[i][0] != besteMuntData3[0] && allCoins[i][0] != besteMuntData4[0] && allCoins[i][10] > 0 ) { //Als het een XXX-EUR munt is en als er een RSI is en niet de beste 4 munten.
             if ( allCoins[i][10] > besteMunt5 ) {
               besteMunt5 = allCoins[i][10]
               //allCoins[i][13] = parseFloat(i) // Hier gaat de RATING in de allCoins array
@@ -407,25 +406,25 @@ function checkBuy() {
     io.sockets.emit('CoinTracker',besteMuntData[0],besteMuntData2[0],besteMuntData3[0],besteMuntData4[0],besteMuntData5[0],besteMunt,besteMunt2,besteMunt3,besteMunt4,besteMunt5) 
   } 
     
-      if ( aankoopArray.length < 1 && besteMuntData[12] < lowRSI && besteMuntData[12] > 0 && besteMunt > -10000) { 
+      if ( aankoopArray.length < 1 && besteMuntData[12] < 50 && besteMuntData[12] > 0 && besteMunt > -10000) { 
         buy(besteMuntData) 
-        console.log(' buy order besteMuntData : ' + besteMuntData)
+        console.log(' Koop order besteMuntData : ' + besteMuntData)
       }
-      if ( aankoopArray.length < 1 && besteMuntData2[12] < lowRSI && besteMuntData2[12] > 0 && besteMunt2 > -10000) { 
+      if ( aankoopArray.length < 1 && besteMuntData2[12] < 48 && besteMuntData2[12] > 0 && besteMunt2 > -10000) { 
         buy(besteMuntData2) 
-        console.log(' buy order besteMuntData : ' + besteMuntData2)
+        console.log(' Koop order besteMuntData : ' + besteMuntData2)
       }
       if ( aankoopArray.length < 1 && besteMuntData3[12] < lowRSI && besteMuntData3[12] > 0 && besteMunt3 > -10000) { 
         buy(besteMuntData3) 
-        console.log(' buy order besteMuntData : ' + besteMuntData3)
+        console.log(' Koop order besteMuntData : ' + besteMuntData3)
       }
       if ( aankoopArray.length < 1 && besteMuntData4[12] < lowRSI && besteMuntData4[12] > 0 && besteMunt4 > -10000) { 
         buy(besteMuntData4) 
-        console.log(' buy order besteMuntData : ' + besteMuntData4)
+        console.log(' Koop order besteMuntData : ' + besteMuntData4)
       }
       if ( aankoopArray.length < 1 && besteMuntData5[12] < lowRSI && besteMuntData5[12] > 0 && besteMunt5 > -10000) { 
         buy(besteMuntData5) 
-        console.log(' buy order besteMuntData : ' + besteMuntData5)
+        console.log(' Koop order besteMuntData : ' + besteMuntData5)
       }    
   }
       
@@ -476,9 +475,9 @@ function checkSell() {
       //console.log(aankoopArray)
       //We verkopen als de markt crashed...
       if ( aankoopArray.length > 0 && (scoreWholeMarket2min/verkoopFactor2) < L2 ) { 
-        io.sockets.emit('Sell', 'The market crashed, Trying to save your EUROS', (scoreWholeMarket2min/verkoopFactor2))
+        io.sockets.emit('Sell', ' De markt zakte in elkaar... Euros veilig gesteld!', (scoreWholeMarket2min/verkoopFactor2))
         var d = new Date()
-        berichten.push([d.toLocaleString() + 'The market crashed, Trying to save your EUROS' + (scoreWholeMarket2min/verkoopFactor2)])
+        berichten.push([d.toLocaleString() + ' De markt zakte in elkaar... Euros veilig gesteld!' + (scoreWholeMarket2min/verkoopFactor2)])
         sell(aankoopArray[0],allCoins[i])
          
       }
@@ -497,9 +496,9 @@ function checkSell() {
       //VANAF HIER VERDER WERKEN MET DE SETTINGS INTERFACE FRONT END
       //Test met shortAVG ipv prijs.. De prijs springt soms te ver op en neer waardoor deze de trigger afzet.
       if ( aankoopArray.length > 0 && scrorePrijsPercentage < L3  ) { // && allCoins[i][8] < 0 <---Bugje
-        io.sockets.emit('Sell', 'The coin hit the lower % mark. Sold it.', scrorePrijsPercentage)
+        io.sockets.emit('Sell', ' De munt zakte onder de verkoop % limiet. Heb hem verkocht.', scrorePrijsPercentage)
         var d = new Date()
-        berichten.push([d.toLocaleString() + 'The coin hit the lower % mark. Sold it.' + scrorePrijsPercentage]) 
+        berichten.push([d.toLocaleString() + ' De munt zakte onder de verkoop % limiet. Heb hem verkocht.' + scrorePrijsPercentage]) 
         sell(aankoopArray[0],allCoins[i])
          
       }
@@ -521,7 +520,7 @@ function checkSell() {
 }
 
 function buy(coindata) {
-  console.log('Im Trying to buy ' + coindata[0] + ' with price ' + coindata[1])
+  console.log('Ik probeer ' + coindata[0] + ' te kopen met prijs ' + coindata[1])
   try {  
   var prices = coindata[1]
   var price = parseFloat(prices[prices.length-1])
@@ -534,9 +533,9 @@ function buy(coindata) {
   console.log('Saldo Euro = ' + geldEUR)
   console.log(aankoopArray)
   checkDelayTimer = 0;
-  io.sockets.emit('Buy', 'I Bought ' + aankoopArray[0][0] + ' on price ' + aankoopArray[0][1].toFixed(3) + ' in amounts of ' + aankoopArray[0][2].toFixed(3))
+  io.sockets.emit('Buy', ' Ik heb ' + aankoopArray[0][0] + ' ingekocht met prijs ' + aankoopArray[0][1].toFixed(3) + ' en hoeveelheid ' + aankoopArray[0][2].toFixed(3) + '.')
   var d = new Date()
-  berichten.push([d.toLocaleString() + ' I Bought ' + aankoopArray[0][0] + ' on price ' + aankoopArray[0][1].toFixed(3) + ' in amounts of ' + aankoopArray[0][2].toFixed(3)])
+  berichten.push([d.toLocaleString() + ' Ik heb ' + aankoopArray[0][0] + ' ingekocht met prijs ' + aankoopArray[0][1].toFixed(3) + ' en hoeveelheid ' + aankoopArray[0][2].toFixed(3)  + '.'])
 }
 catch(err) {
   console.log(err.message);
@@ -552,7 +551,7 @@ function sell(aankoopdata,verkoopdata) {
   var geldFee = geld / feeFactor
   geldEUR += geldFee  
   aankoopArray = []  
-  console.log('Munt verkocht: ' + aankoopdata[0] + ' Buy= ' + buyPrice + ' Sell= ' + sellPrice)
+  console.log('Munt verkocht: ' + aankoopdata[0] + ' Koop = ' + buyPrice + ' Verkoop = ' + sellPrice)
   console.log('Saldo Euros = ' + geldEUR)
   console.log(aankoopArray)
   checkDelayTimer = 0;
@@ -566,15 +565,15 @@ io.on('connection', socket => {
         socket.emit('user-disconnected')
     })
         socket.on('sellCoin', () => {
-          console.log('emergency button pressed!!!!!!!!!!!!!!!!!!!!!')
+          console.log('Nood Stop ingedrukt!!!!!!!!!!!!!!!!!!!!!')
           for (let i = 0; i < allCoins.length; i++) {
             if ( aankoopArray.length > 0 ) {
             if ( allCoins[i][0] === aankoopArray[0][0] ) {
               sell(aankoopArray[0],allCoins[i])
               //Ik gebruik de Buy versie omdat ik dan alleen text kan verzenden.
-              io.sockets.emit('Buy', 'Coin Sold because You pressed the SELL BUTTON.')
+              io.sockets.emit('Buy', ' Munt verkocht want er is op de VERKOOP DEZE MUNT knop gedrukt.')
               var d = new Date()
-              berichten.push([d.toLocaleString() + 'Coin Sold because You pressed the SELL BUTTON.'])
+              berichten.push([d.toLocaleString() + ' Munt verkocht want er is op de VERKOOP DEZE MUNT knop gedrukt.'])
               
             }
           }
@@ -600,7 +599,7 @@ io.on('connection', socket => {
     L1 = parseFloat(SL1)
     L2 = parseFloat(SL2)
     L3 = parseFloat(SL3)
-    console.log('Recieved new settings from user front end new smaShortPeriod = ' + smaShortPeriod)
+    console.log('Nieuwe instellingen ontvangen van de front end = ' + smaShortPeriod)
 })     
 })
 
