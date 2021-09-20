@@ -254,7 +254,7 @@ socket.on('CoinTracker', function(besteMuntData,besteMuntData2,besteMuntData3,be
     ctp5.innerHTML = '#5 Coin = ' + besteMuntData5 + ' met score van ' + besteMunt5
 });
 
-socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, verkoopFactor1, verkoopFactor2, verkoopFactor3, marktkooppercentage, L1, L2, L3) {
+socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, marktkooppercentage, L1, L2, L3) {
     SsmaShortPeriod = smaShort
     SsmaMediumPeriod = smaMedium
     SsmaLongPeriod = smaLong
@@ -342,6 +342,6 @@ function openNav() {
     SL1 = document.getElementById("L1").value;
     SL2 = document.getElementById("L2").value;
     SL3 = document.getElementById("L3").value;
-    socket.emit('newSettings', SsmaShortPeriod, SsmaMediumPeriod, SsmaLongPeriod, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, SverkoopFactor1, SverkoopFactor2, SverkoopFactor3, Smarktkooppercentage, SL1, SL2, SL3)
+    socket.emit('newSettings', SsmaShortPeriod, SsmaMediumPeriod, SsmaLongPeriod, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, Smarktkooppercentage, SL1, SL2, SL3)
     console.log('New Settings Send to server')
   }

@@ -48,7 +48,7 @@ let loopinterval = 5; //Loop interval in seconden
 let score24hrsTrendFactor = 2
 let score1hrsTrendFactor = 50
 let scoreLongTrendFactor = 80
-let scoreWholeMarketFactor = 40
+let scoreWholeMarketFactor = 2
 let lowRSI = 47;
 let verkoopFactor1 = 50 // factor scoreLongTrendPercent // Buiten gebruik
 let verkoopFactor2 = 10 // factor scoreWholeMarket2min // Buiten gebruik
@@ -60,7 +60,7 @@ let L3 = -3 // Percentage waarbij verkocht word als de prijs is gezakt...
 
 //Virtuele coin om te testen...
 let geldEUR = 1000;
-let feeFactor = 1.0025;
+let feeFactor = 1.0025; // Standaard fee Bitvavo transacties
 let aankoopArray = [];
 let digiEUR = 0;
 
@@ -581,9 +581,9 @@ io.on('connection', socket => {
     
     })
     socket.on('settings', () => {
-      socket.emit('serverSettings', smaShortPeriod, smaMediumPeriod, smaLongPeriod, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, verkoopFactor1, verkoopFactor2, verkoopFactor3, marktkooppercentage, L1, L2, L3)
+      socket.emit('serverSettings', smaShortPeriod, smaMediumPeriod, smaLongPeriod, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, marktkooppercentage, L1, L2, L3)
   })
-  socket.on('newSettings', (SsmaShort, SsmaMedium, SsmaLong, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, SverkoopFactor1, SverkoopFactor2, SverkoopFactor3, Smarktkooppercentage, SL1, SL2, SL3) => {
+  socket.on('newSettings', (SsmaShort, SsmaMedium, SsmaLong, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, Smarktkooppercentage, SL1, SL2, SL3) => {
     smaShortPeriod = parseFloat(SsmaShort);
     smaMediumPeriod = parseFloat(SsmaMedium);
     smaLongPeriod = parseFloat(SsmaLong); 
@@ -592,9 +592,9 @@ io.on('connection', socket => {
     scoreLongTrendFactor = parseFloat(SscoreLongTrendFactor)
     scoreWholeMarketFactor = parseFloat(SscoreWholeMarketFactor)
     lowRSI = parseFloat(SlowRSI);
-    verkoopFactor1 = parseFloat(SverkoopFactor1) // factor scoreLongTrendPercent
-    verkoopFactor2 = parseFloat(SverkoopFactor2) // factor scoreWholeMarket2min
-    verkoopFactor3 = parseFloat(SverkoopFactor3) // factor scoreAankoopPrijsPercentage
+    //verkoopFactor1 = parseFloat(SverkoopFactor1) // factor scoreLongTrendPercent
+    //verkoopFactor2 = parseFloat(SverkoopFactor2) // factor scoreWholeMarket2min
+    //verkoopFactor3 = parseFloat(SverkoopFactor3) // factor scoreAankoopPrijsPercentage
     marktkooppercentage = parseFloat(Smarktkooppercentage)
     L1 = parseFloat(SL1)
     L2 = parseFloat(SL2)
@@ -606,4 +606,4 @@ io.on('connection', socket => {
 
 
 
-server.listen(3000, '0.0.0.0')
+server.listen(3010, '0.0.0.0')
