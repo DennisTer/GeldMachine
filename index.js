@@ -45,16 +45,16 @@ let allCoins = []; //Multi dimensional array of all coins and prices and trends.
 let buildALLCOINS = 0;
 let coinHeroName;
 let loopinterval = 5; //Loop interval in seconden
-let score24hrsTrendFactor = 10
+let score24hrsTrendFactor = 2
 let score1hrsTrendFactor = 50
-let scoreLongTrendFactor = 50
-let scoreWholeMarketFactor = 10
+let scoreLongTrendFactor = 80
+let scoreWholeMarketFactor = 40
 let lowRSI = 47;
-let verkoopFactor1 = 50 // factor scoreLongTrendPercent
-let verkoopFactor2 = 10 // factor scoreWholeMarket2min
-let verkoopFactor3 = 40 // factor scoreAankoopPrijsPercentage
+let verkoopFactor1 = 50 // factor scoreLongTrendPercent // Buiten gebruik
+let verkoopFactor2 = 10 // factor scoreWholeMarket2min // Buiten gebruik
+let verkoopFactor3 = 40 // factor scoreAankoopPrijsPercentage // Buiten gebruik
 let marktkooppercentage = -0.2 // Percentage markt trend waar boven er gekocht mag worden
-let L1 = 1 // Percentage waarboven de prijs meelift in CheckSell
+let L1 = 0.4 // Percentage waarboven de prijs meelift in CheckSell
 let L2 = -0.5 // Percentage van de totale markt trend. Bij markt crash verkopen we alles.....
 let L3 = -3 // Percentage waarbij verkocht word als de prijs is gezakt...
 
