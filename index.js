@@ -280,11 +280,11 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   MarketSumArray.push(parseFloat(marketSumOfPrices)) // Stop de market som of prijces in een array voor SMA berekening
   MarketSumArrayTimes.push(Date.now())
   smaMarketSum = sma(MarketSumArray,smaShortPeriod,format); // Bereken de SMA over de marketSum
-  if (MarketSumArray.length > 100) { MarketSumArray.shift() } // Hou de array kort
-  if (MarketSumArrayTimes.length > 100) { MarketSumArrayTimes.shift() } // Hou de array kort
-  if (smaMarketSum.lenght > 100) { smaMarketSum.shift() } // Hou de array kort
+  if (MarketSumArray.length > 1000) { MarketSumArray.shift() } // Hou de array kort
+  if (MarketSumArrayTimes.length > 1000) { MarketSumArrayTimes.shift() } // Hou de array kort
+  if (smaMarketSum.lenght > 1000) { smaMarketSum.shift() } // Hou de array kort
   wholeMarketTrend = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[0])/smaMarketSum[0] * 100); // percentage trend
-  var TwoMinutes = 120 / loopinterval
+  var TwoMinutes = 1200 / loopinterval // Made it 20 minutes
   wholeMarketTrend2min = ((smaMarketSum[smaMarketSum.length-1]-smaMarketSum[smaMarketSum.length-TwoMinutes])/smaMarketSum[smaMarketSum.length-TwoMinutes] * 100);
   //console.log('Som van Prijzen = ' + marketSumOfPrices.toFixed(1) + '. Whole Market Trend = ' + wholeMarketTrend.toFixed(2) + ' %')
   io.sockets.emit('MarketStatus', MarketSumArray, MarketSumArrayTimes, wholeMarketTrend)
