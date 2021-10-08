@@ -116,6 +116,9 @@ let SL1
 let SL2
 let SL3
 let StargetPrice
+let Sscore6hrsTrendFactor
+let Sscore30minTrendFactor
+let Sscore10minTrendFactor
 
 socket.on('user-connected', function(berichten) {
     console.log('We Have a COnneectionnnnn!!!!')
@@ -254,7 +257,7 @@ socket.on('CoinTracker', function(besteMuntData,besteMuntData2,besteMuntData3,be
     ctp5.innerHTML = '#5 Coin = ' + besteMuntData5 + ' met score van ' + besteMunt5
 });
 
-socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, marktkooppercentage, L1, L2, L3) {
+socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTrendFactor, score1hrsTrendFactor, scoreLongTrendFactor, scoreWholeMarketFactor, lowRSI, marktkooppercentage, L1, L2, L3 ,score6hrsTrendFactor, score30minTrendFactor, score10minTrendFactor) {
     SsmaShortPeriod = smaShort
     SsmaMediumPeriod = smaMedium
     SsmaLongPeriod = smaLong
@@ -270,6 +273,9 @@ socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTre
     SL1 = L1
     SL2 = L2
     SL3 = L3
+    Sscore6hrsTrendFactor = score6hrsTrendFactor
+    Sscore30minTrendFactor = score30minTrendFactor
+    Sscore10minTrendFactor = score10minTrendFactor
     $("#interface").load("settings.html",function(){
         document.getElementById("vol1").value = SsmaShortPeriod;
         document.getElementById("vol2").value = SsmaMediumPeriod;
@@ -278,6 +284,9 @@ socket.on('serverSettings', function(smaShort, smaMedium, smaLong, score24hrsTre
         document.getElementById("aankoop2").value = Sscore1hrsTrendFactor;
         document.getElementById("aankoop3").value = SscoreLongTrendFactor;
         document.getElementById("aankoop4").value = SscoreWholeMarketFactor;
+        document.getElementById("aankoop5").value = Sscore6hrsTrendFactor;
+        document.getElementById("aankoop6").value = Sscore30minTrendFactor;
+        document.getElementById("aankoop7").value = Sscore10minTrendFactor;
         document.getElementById("RSIaankoop").value = SlowRSI;
         //document.getElementById("verkoopScore1").value = SverkoopFactor1;
         //document.getElementById("verkoopScore2").value = SverkoopFactor2;
@@ -334,6 +343,9 @@ function openNav() {
     Sscore1hrsTrendFactor = document.getElementById("aankoop2").value;
     SscoreLongTrendFactor = document.getElementById("aankoop3").value;
     SscoreWholeMarketFactor = document.getElementById("aankoop4").value;
+    Sscore6hrsTrendFactor = document.getElementById("aankoop5").value;
+    Sscore30minTrendFactor = document.getElementById("aankoop6").value;
+    Sscore10minTrendFactor = document.getElementById("aankoop7").value;
     SlowRSI = document.getElementById("RSIaankoop").value;
     //SverkoopFactor1 = document.getElementById("verkoopScore1").value;
     //SverkoopFactor2 = document.getElementById("verkoopScore2").value;
@@ -342,6 +354,6 @@ function openNav() {
     SL1 = document.getElementById("L1").value;
     SL2 = document.getElementById("L2").value;
     SL3 = document.getElementById("L3").value;
-    socket.emit('newSettings', SsmaShortPeriod, SsmaMediumPeriod, SsmaLongPeriod, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, Smarktkooppercentage, SL1, SL2, SL3)
+    socket.emit('newSettings', SsmaShortPeriod, SsmaMediumPeriod, SsmaLongPeriod, Sscore24hrsTrendFactor, Sscore1hrsTrendFactor, SscoreLongTrendFactor, SscoreWholeMarketFactor, SlowRSI, Smarktkooppercentage, SL1, SL2, SL3, Sscore6hrsTrendFactor, Sscore30minTrendFactor, Sscore10minTrendFactor)
     console.log('New Settings Send to server')
   }
