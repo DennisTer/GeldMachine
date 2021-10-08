@@ -418,7 +418,7 @@ bitvavo.getEmitter().on('tickerPrice', (response) => {
   if ( checkDelayTimer > 2 && buildALLCOINS > (smaLongPeriod + 10) ){
   checkBuy();
   }
-  if ( aankoopArray.length > 0 && checkDelayTimer > 2 ){ 
+  if ( aankoopArray.length > 0 && checkDelayTimer > 2 && besteMuntData5 != undefined){ 
   checkSell();
   }
   // Hoe de berichten array kort tot 20 vergaande berichten
@@ -563,7 +563,6 @@ function checkSell() {
   for (let i = 0; i < allCoins.length; i++) {
     if ( aankoopArray.length > 0 ) {
     if ( allCoins[i][0] === aankoopArray[0][0] ) {
-      if ( allCoins[i][0] === besteMuntData[0] || allCoins[i][0] === besteMuntData2[0] || allCoins[i][0] === besteMuntData3[0] || allCoins[i][0] === besteMuntData4[0] || allCoins[i][0] === besteMuntData5[0]) { return } // Als de aangekochte munt nog steeds in de top 5 staat doe dan niks
       
       
       //Scorings systeem verkoop
@@ -595,6 +594,9 @@ function checkSell() {
         sell(aankoopArray[0],allCoins[i])
          
       }
+      //Als de aangekochte munt in de bestemunt staat check dan NiKS MEER EN VERLAAT DE FUNCTIE
+      if ( allCoins[i][0] === besteMuntData[0] || allCoins[i][0] === besteMuntData2[0] || allCoins[i][0] === besteMuntData3[0] || allCoins[i][0] === besteMuntData4[0] || allCoins[i][0] === besteMuntData5[0]) { return } // Als de aangekochte munt nog steeds in de top 5 staat doe dan niks
+      
       //We verkopen als de munt goed gestegen is en de lange trend naar beneden zakt op een hoog moment
       //Hier kunnen we een MOVING target van maken. BV.. Als de prijs nog stijgt stellen we de winst % hoger bij.
       //  Dan blijft de munt langer door stijgen en word deze niet vroegtijdig verkocht.
